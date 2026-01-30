@@ -50,6 +50,30 @@ async function handle_api(req, res) {
 		else
 			res.writeHead(403, { 'Content-Type': 'text/plain' }),
 				res.end('Forbidden: Request method not allowed');
+	else if (parsed_url.pathname === '/api/updinfo')
+		if (req.method === 'GET')
+			api.updinfo(parsed_url, res);
+		else
+			res.writeHead(403, { 'Content-Type': 'text/plain' }),
+				res.end('Forbidden: Request method not allowed');
+	else if (parsed_url.pathname === '/api/newchat')
+		if (req.method === 'GET')
+			api.newchat(parsed_url, res);
+		else
+			res.writeHead(403, { 'Content-Type': 'text/plain' }),
+				res.end('Forbidden: Request method not allowed');
+	else if (parsed_url.pathname === '/api/postchat')
+		if (req.method === 'GET')
+			api.postchat(parsed_url, res);
+		else
+			res.writeHead(403, { 'Content-Type': 'text/plain' }),
+				res.end('Forbidden: Request method not allowed');
+	else if (parsed_url.pathname === '/api/getchat')
+		if (req.method === 'GET')
+			api.getchat(parsed_url, res);
+		else
+			res.writeHead(403, { 'Content-Type': 'text/plain' }),
+				res.end('Forbidden: Request method not allowed');
 	else
 		res.writeHead(400, { 'Content-Type': 'text/plain' }),
 			res.end('Bad request: Unknown interface');

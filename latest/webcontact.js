@@ -8,7 +8,7 @@ const ConnectionState = {
 	ERROR: 'error'
 };
 const ConnectionType = {
-	JUDGE_LOGIN: 'judge_login',
+	JUDGE_CHAT: 'judge_chat',
 	JUDGE_SUBMIT: 'judge_submit',
 	JUDGE_QUERY: 'judge_query',
 	MIDDLE: 'middle'
@@ -346,12 +346,12 @@ class ConnectionManager {
 		// 连接所有评测机
 		if (config.judgeServers && config.judgeServers.length > 0) {
 			for (const server of config.judgeServers) {
-				if (server.loginPort) {
+				if (server.chatPort) {
 					await this.createAndConnectClient(
 						server.id,
 						server.ip,
-						server.loginPort,
-						ConnectionType.JUDGE_LOGIN
+						server.chatPort,
+						ConnectionType.JUDGE_CHAT
 					);
 				}
 				if (server.judgePort) {
@@ -445,8 +445,8 @@ class ConnectionManager {
 
 		let port;
 		switch (type) {
-			case ConnectionType.JUDGE_LOGIN:
-				port = server.loginPort;
+			case ConnectionType.JUDGE_CHAT:
+				port = server.chatPort;
 				break;
 			case ConnectionType.JUDGE_SUBMIT:
 				port = server.judgePort;
@@ -475,7 +475,9 @@ class ConnectionManager {
 		}
 
 		const randomIndex = Math.floor(Math.random() * availableServers.length);
-		return availableServers[randomIndex];
+		const sellected = availableServers[randomIndex];
+
+		return this.getJudgeClient(sellected.id, type);
 	}
 
 	/**
@@ -531,7 +533,6 @@ async function verify_cookie(cookie) {
 		}
 
 		const response = await client.sendAndWait('V', cookie);
-		// 现在 response 是一个包含 status 和 content 的对象
 		return response.content;
 	} catch (error) {
 		console.error('Failed to verify cookie:', error.message);
@@ -572,7 +573,7 @@ async function updinfo(cookie, username, password, publiccode) {
 		client.sendOnly('U', username);
 		client.sendOnly('P', password);
 		response = client.sendAndWait('C', publiccode);
-		return response.content;
+		return response;
 	} catch (error) {
 		console.error('Failed to update account info:', error.message);
 		return error.message;
@@ -580,48 +581,103 @@ async function updinfo(cookie, username, password, publiccode) {
 }
 
 /**
- * 通用请求执行器，带有重试逻辑
+ * 新建讨论
  */
-async function executeWithRetry(requestFn, options = {}) {
-	const maxRetries = options.maxRetries || config.maxRetries || 3;
-	const retryDelay = options.retryDelay || config.retryDelay || 30;
-	const connectionType = options.connectionType;
-	const selectorFn = options.selectorFn;
 
-	let lastError;
-
-	for (let attempt = 1; attempt <= maxRetries; attempt++) {
-		try {
-			let selectedConnection = null;
-
-			if (selectorFn) {
-				selectedConnection = selectorFn();
-			} else if (connectionType) {
-				const server = connectionManager.selectJudgeServer(connectionType);
-				if (!server) {
-					throw new Error(`No available ${connectionType} servers`);
-				}
-				selectedConnection = connectionManager.getJudgeClient(server.id, connectionType);
-			} else {
-				selectedConnection = connectionManager.getMiddleClient();
-			}
-
-			if (!selectedConnection || !selectedConnection.isConnected()) {
-				throw new Error('Connection not available');
-			}
-
-			return await requestFn(selectedConnection);
-		} catch (error) {
-			lastError = error;
-			console.warn(`Attempt ${attempt} failed: ${error.message}`);
-
-			if (attempt < maxRetries) {
-				await new Promise(resolve => setTimeout(resolve, retryDelay));
-			}
+async function newchat(cookie, content) {
+	let client = connectionManager.getMiddleClient();
+	try {
+		if (!client || !client.isConnected()) {
+			throw new Error('Middle server not connected');
 		}
+		const response = await client.sendAndWait('V', cookie);
+		if (response.content != "Y") throw "IDK?";
+	} catch (error) {
+		console.error('Failed to create chat(cookie err):', error.message);
+		return `["N",${error.message}]`;
 	}
+	//passed cookie check
+	client = connectionManager.selectJudgeServer(ConnectionType.JUDGE_CHAT);
+	try {
+		if (!client || !client.isConnected()) {
+			throw new Error('Middle server not connected');
+		}
+		const response = await client.sendAndWait('S', content);
+		if (response.status === "Y") return `["Y",${response.content}]`;
+		throw "IDK?";
+	}
+	catch (error) {
+		console.error('Failed to create chat:', error.message);
+		return `["N",${error.message}]`;
+	}
+}
 
-	throw new Error(`Failed after ${maxRetries} attempts. Last error: ${lastError.message}`);
+/**
+ * 回复讨论
+ */
+
+async function postchat(cookie, cid, content) {
+	let client = connectionManager.getMiddleClient();
+	try {
+		if (!client || !client.isConnected()) {
+			throw new Error('Middle server not connected');
+		}
+		const response = await client.sendAndWait('V', cookie);
+		if (response.content != "Y") throw "IDK?";
+	} catch (error) {
+		console.error('Failed to post chat(cookie err):', error.message);
+		return "N";
+	}
+	//passed cookie check
+	client = connectionManager.selectJudgeServer(ConnectionType.JUDGE_CHAT);
+	try {
+		if (!client || !client.isConnected()) {
+			throw new Error('Middle server not connected');
+		}
+		client.sendOnly('P', cid);
+		const response = await client.sendAndWait('S', content);
+		console.log(response)
+		if (response.content === "Y") return "Y";
+		console.log("alive")
+		throw "IDK?";
+	}
+	catch (error) {
+		console.error('Failed to post chat:', error.message);
+		return "N";
+	}
+}
+
+/**
+ * 获取讨论
+ */
+
+async function getchat(cookie, cid, page) {
+	let client = connectionManager.getMiddleClient();
+	try {
+		if (!client || !client.isConnected()) {
+			throw new Error('Middle server not connected');
+		}
+		const response = await client.sendAndWait('V', cookie);
+		if (response.content != "Y") throw "IDK?";
+	} catch (error) {
+		console.error('Failed to get chat(cookie err):', error.message);
+		return `["N",${error.message}]`;
+	}
+	//passed cookie check
+	client = connectionManager.selectJudgeServer(ConnectionType.JUDGE_CHAT);
+	try {
+		if (!client || !client.isConnected()) {
+			throw new Error('Middle server not connected');
+		}
+		client.sendOnly('G', cid);
+		const response = await client.sendAndWait('S', page);
+		if (response.status === "Y") return `["Y",${response.content}]`;
+		throw "IDK?";
+	}
+	catch (error) {
+		console.error('Failed to get chat:', error.message);
+		return `["N",${error.message}]`;
+	}
 }
 
 module.exports = {
@@ -634,13 +690,16 @@ module.exports = {
 	initializeConnections,
 
 	// API函数
+	//account
 	verify_cookie,
 	login,
 	updinfo,
 
-	// 通用执行器
-	executeWithRetry,
-	selectJudgeServer: () => connectionManager.selectJudgeServer(ConnectionType.JUDGE_SUBMIT),
+	//chat
+	newchat,
+	postchat,
+	getchat,
+
 	getJudgeServerConfig: (judgeId) => {
 		const server = config.judgeServerMap[judgeId];
 		if (!server) {

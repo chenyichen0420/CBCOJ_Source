@@ -17,7 +17,7 @@ const port = pardata.port;
 const midport = pardata.midport;
 const midip = pardata.midip;
 
-const judgeServers = pardata.judgeServers || [];
+const judgeServers = pardata.judger || [];
 const judgeServerMap = {};
 judgeServers.forEach(server => {
     judgeServerMap[server.id] = server;
