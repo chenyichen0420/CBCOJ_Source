@@ -11,7 +11,8 @@ const ConnectionType = {
 	JUDGE_CHAT: 'judge_chat',
 	JUDGE_SUBMIT: 'judge_submit',
 	JUDGE_QUERY: 'judge_query',
-	MIDDLE: 'middle'
+	MIDDLE_ACCOUNT: 'middle_account',
+	MIDDLE_MSG: 'middle_msg'
 };
 const Events = {
 	CONNECTED: 'connected',
@@ -334,12 +335,20 @@ class ConnectionManager {
 		console.log('Initializing connections...');
 
 		// 连接中间部分
-		if (config.midip && config.midport) {
+		if (config.midip && config.midporta) {
 			await this.createAndConnectClient(
 				'middle',
 				config.midip,
-				config.midport,
-				ConnectionType.MIDDLE
+				config.midporta,
+				ConnectionType.MIDDLE_ACCOUNT
+			);
+		}
+		if (config.midip && config.midportm) {
+			await this.createAndConnectClient(
+				'middle',
+				config.midip,
+				config.midportm,
+				ConnectionType.MIDDLE_MSG
 			);
 		}
 
@@ -432,8 +441,11 @@ class ConnectionManager {
 	/**
 	 * 获取中间部分客户端
 	 */
-	getMiddleClient() {
-		return this.getClient('middle', config.midport, ConnectionType.MIDDLE);
+	getMiddleA() {
+		return this.getClient('middle', config.midporta, ConnectionType.MIDDLE_ACCOUNT);
+	}
+	getMiddleM() {
+		return this.getClient('middle', config.midportm, ConnectionType.MIDDLE_MSG);
 	}
 
 	/**
@@ -464,7 +476,7 @@ class ConnectionManager {
 	/**
 	 * 随机选择一个评测机
 	 */
-	selectJudgeServer(type) {
+	selectJudgeServerId(type) {
 		const availableServers = config.judgeServers.filter(server => {
 			const client = this.getJudgeClient(server.id, type);
 			return client && client.isConnected();
@@ -477,7 +489,8 @@ class ConnectionManager {
 		const randomIndex = Math.floor(Math.random() * availableServers.length);
 		const sellected = availableServers[randomIndex];
 
-		return this.getJudgeClient(sellected.id, type);
+		return sellected.id;
+		//return this.getJudgeClient(sellected.id, type);
 	}
 
 	/**
@@ -512,26 +525,20 @@ class ConnectionManager {
 		return status;
 	}
 }
-
 const connectionManager = new ConnectionManager();
-
-/**
- * 初始化连接
- */
 async function initializeConnections() {
 	await connectionManager.initialize();
 }
 
 /**
- * 验证cookie有效性（使用中间部分）
+ * verify cookies
+ * @param {any} cookie
+ * @returns {string} "Y"/"N"
  */
 async function verify_cookie(cookie) {
-	const client = connectionManager.getMiddleClient();
+	const client = connectionManager.getMiddleA();
 	try {
-		if (!client || !client.isConnected()) {
-			throw new Error('Middle server not connected');
-		}
-
+		if (!client || !client.isConnected()) throw new Error('Account server not connected');
 		const response = await client.sendAndWait('V', cookie);
 		return response.content;
 	} catch (error) {
@@ -541,14 +548,15 @@ async function verify_cookie(cookie) {
 }
 
 /**
- * 登录到评测机
+ * login to the system
+ * @param {any} username
+ * @param {any} password
+ * @returns {Array} ["Y"/"N", cookie/error]
  */
 async function login(username, password) {
-	const client = connectionManager.getMiddleClient();
+	const client = connectionManager.getMiddleA();
 	try {
-		if (!client || !client.isConnected()) {
-			throw new Error('Middle server not connected');
-		}
+		if (!client || !client.isConnected()) throw new Error('Account server not connected');
 		await client.sendOnly('L', username);
 		const response = await client.sendAndWait('L', password);
 		return response.content;
@@ -559,15 +567,17 @@ async function login(username, password) {
 }
 
 /**
- * 修改账号设置
+ * update account info
+ * @param {any} cookie
+ * @param {any} username
+ * @param {any} password
+ * @param {any} publiccode
+ * @returns {string} "Y"/"N"
  */
-
 async function updinfo(cookie, username, password, publiccode) {
-	const client = connectionManager.getMiddleClient();
+	const client = connectionManager.getMiddleA();
 	try {
-		if (!client || !client.isConnected()) {
-			throw new Error('Middle server not connected');
-		}
+		if (!client || !client.isConnected()) throw new Error('Account server not connected');
 		let response = await client.sendAndWait('C', cookie);
 		if (response.content === "N") return "N";
 		client.sendOnly('U', username);
@@ -576,34 +586,48 @@ async function updinfo(cookie, username, password, publiccode) {
 		return response;
 	} catch (error) {
 		console.error('Failed to update account info:', error.message);
-		return error.message;
+		return "N";
 	}
 }
 
-/**
- * 新建讨论
- */
+function buildid(serverid, value) {
+	const judgeIdHex = parseInt(serverid, 10).toString(16).padStart(2, '0');
+	const submissionIdHex = parseInt(value, 10).toString(16).padStart(6, '0');
+	return judgeIdHex.toUpperCase() + submissionIdHex.toUpperCase();
+}
 
+function parseid(fullId) {
+	const serverid = parseInt(fullId.substring(0, 2), 16).toString(10);
+	const value = parseInt(fullId.substring(2), 16);
+	return { serverid, value };
+}
+
+/**
+ * start a public chat
+ * @param {any} cookie
+ * @param {any} content
+ * @returns {Array} ["Y"/"N", cid/error]
+ */
 async function newchat(cookie, content) {
-	let client = connectionManager.getMiddleClient();
+	let client = connectionManager.getMiddleA();
 	try {
-		if (!client || !client.isConnected()) {
-			throw new Error('Middle server not connected');
-		}
+		if (!client || !client.isConnected()) throw new Error('Account server not connected');
 		const response = await client.sendAndWait('V', cookie);
-		if (response.content != "Y") throw "IDK?";
+		if (response.content !== "Y") throw "IDK?";
 	} catch (error) {
 		console.error('Failed to create chat(cookie err):', error.message);
 		return `["N",${error.message}]`;
 	}
 	//passed cookie check
-	client = connectionManager.selectJudgeServer(ConnectionType.JUDGE_CHAT);
 	try {
-		if (!client || !client.isConnected()) {
-			throw new Error('Middle server not connected');
-		}
+		const server = connectionManager.selectJudgeServerId(ConnectionType.JUDGE_CHAT);
+		client = connectionManager.getJudgeClient(server, ConnectionType.JUDGE_CHAT);
+		if (!client || !client.isConnected()) throw new Error('Chat server not connected');
 		const response = await client.sendAndWait('S', content);
-		if (response.status === "Y") return `["Y",${response.content}]`;
+		if (response.status === "Y") {
+			const nid = buildid(server, response.content);
+			return `["Y",${nid}]`;
+		}
 		throw "IDK?";
 	}
 	catch (error) {
@@ -613,32 +637,31 @@ async function newchat(cookie, content) {
 }
 
 /**
- * 回复讨论
+ * post a chat
+ * @param {any} cookie
+ * @param {any} cid
+ * @param {any} content
+ * @returns {string} "Y"/"N"
  */
-
 async function postchat(cookie, cid, content) {
-	let client = connectionManager.getMiddleClient();
+	let client = connectionManager.getMiddleA();
 	try {
-		if (!client || !client.isConnected()) {
-			throw new Error('Middle server not connected');
-		}
+		if (!client || !client.isConnected()) throw new Error('Account server not connected');
 		const response = await client.sendAndWait('V', cookie);
-		if (response.content != "Y") throw "IDK?";
+		if (response.content !== "Y") throw "IDK?";
 	} catch (error) {
 		console.error('Failed to post chat(cookie err):', error.message);
 		return "N";
 	}
 	//passed cookie check
-	client = connectionManager.selectJudgeServer(ConnectionType.JUDGE_CHAT);
 	try {
-		if (!client || !client.isConnected()) {
-			throw new Error('Middle server not connected');
-		}
-		client.sendOnly('P', cid);
+		const val = parseid(cid);
+		client = connectionManager.getJudgeClient(val.serverid, ConnectionType.JUDGE_CHAT);
+		if (!client || !client.isConnected()) throw new Error('Chat server not connected');
+		client.sendOnly('P', val.value.toString(10));
 		const response = await client.sendAndWait('S', content);
 		console.log(response)
 		if (response.content === "Y") return "Y";
-		console.log("alive")
 		throw "IDK?";
 	}
 	catch (error) {
@@ -648,34 +671,221 @@ async function postchat(cookie, cid, content) {
 }
 
 /**
- * 获取讨论
+ * fetch one page of a chat
+ * @param {any} cookie
+ * @param {any} cid
+ * @param {any} page
+ * @returns {Array} ["Y"/"N", [content list]/error]
  */
-
 async function getchat(cookie, cid, page) {
-	let client = connectionManager.getMiddleClient();
+	let client = connectionManager.getMiddleA();
 	try {
-		if (!client || !client.isConnected()) {
-			throw new Error('Middle server not connected');
-		}
+		if (!client || !client.isConnected()) throw new Error('Account server not connected');
 		const response = await client.sendAndWait('V', cookie);
-		if (response.content != "Y") throw "IDK?";
+		if (response.content !== "Y") throw "IDK?";
 	} catch (error) {
 		console.error('Failed to get chat(cookie err):', error.message);
 		return `["N",${error.message}]`;
 	}
 	//passed cookie check
-	client = connectionManager.selectJudgeServer(ConnectionType.JUDGE_CHAT);
 	try {
-		if (!client || !client.isConnected()) {
-			throw new Error('Middle server not connected');
-		}
-		client.sendOnly('G', cid);
+		const val = parseid(cid);
+		client = connectionManager.getJudgeClient(val.serverid, ConnectionType.JUDGE_CHAT);
+		if (!client || !client.isConnected()) throw new Error('Chat server not connected');
+		client.sendOnly('G', val.value.toString(10));
 		const response = await client.sendAndWait('S', page);
 		if (response.status === "Y") return `["Y",${response.content}]`;
 		throw "IDK?";
 	}
 	catch (error) {
 		console.error('Failed to get chat:', error.message);
+		return `["N",${error.message}]`;
+	}
+}
+
+function getuid(cookie) {
+	if (!cookie || cookie.length < 2) return null;
+	const lenChar = cookie[0];
+	const uidLength = parseInt(lenChar, 10);
+	if (isNaN(uidLength) || uidLength <= 0) return null;
+	if (cookie.length < 1 + uidLength) return null;
+	const uid = cookie.substring(1, 1 + uidLength);
+	return uid;
+}
+
+/**
+ * submit a code to the judge server
+ * @param {any} cookie
+ * @param {any} pid
+ * @param {any} lan
+ * @param {any} code
+ * @returns {Array} ["Y"/"N",rid/error]
+ */
+async function submit(cookie, pid, lan, code) {
+	if (
+		lan !== "C++14-O2" && lan !== "c++14-O2" &&
+		lan !== "C++17-O2" && lan !== "c++17-O2" &&
+		lan !== "C++20-O2" && lan !== "c++20-O2" &&
+		lan !== "C++14" && lan !== "c++14" &&
+		lan !== "C++17" && lan !== "c++17" &&
+		lan !== "C++20" && lan !== "c++20"
+	) {
+		console.error('Failed to submit(unsupported language):', error.message);
+		return `["N",${error.message}]`;
+	}
+	const client1 = connectionManager.getMiddleA();
+	try {
+		if (!client1 || !client1.isConnected()) throw new Error('Account server not connected');
+		const response = await client1.sendAndWait('V', cookie);
+		if (response.content !== "Y") throw "IDK?";
+	} catch (error) {
+		console.error('Failed to submit(cookie err):', error.message);
+		return `["N",${error.message}]`;
+	}
+	//passed cookie check
+	try {
+		const server = connectionManager.selectJudgeServerId(ConnectionType.JUDGE_SUBMIT);
+		const client = connectionManager.getJudgeClient(server, ConnectionType.JUDGE_SUBMIT);
+		if (!client || !client.isConnected()) throw new Error('Judge server not connected');
+		const uids = getuid(cookie);
+		let response = await client.sendAndWait('S', uids);
+		if (response.status === "E") return `["N",${response.content}]`;
+		response = await client.sendAndWait('O', pid);
+		if (response.status === "E") return `["N",${response.content}]`;
+		response = await client.sendAndWait('O', lan);
+		if (response.status === "E") return `["N",${response.content}]`;
+		client.sendOnly('O', lan);
+		response = await sendAndWait('O', code);
+		if (response.status !== "O") throw response.content;
+		const nid = buildid(server, response.content);
+		client1.sendOnly('R', uids);
+		client1.sendOnly('R', nid);
+		return `["Y",${nid}]`;
+	}
+	catch (error) {
+		console.error('Failed to submit:', error.message);
+		return `["N",${error.message}]`;
+	}
+}
+
+/**
+ * get a single record, but detail
+ * @param {any} cookie
+ * @param {any} rid
+ * @returns {Array} ["P"/"N",partical_result_JSON/error] / ["Y",result_JSON,code] 
+ */
+async function getrecord(cookie, rid) {
+	const client1 = connectionManager.getMiddleA();
+	try {
+		if (!client1 || !client1.isConnected()) throw new Error('Account server not connected');
+		const response = await client1.sendAndWait('V', cookie);
+		if (response.content !== "Y") throw "IDK?";
+	} catch (error) {
+		console.error('Failed to get record(cookie err):', error.message);
+		return `["N",${error.message}]`;
+	}
+	//passed cookie check
+	try {
+		const val = parseid(rid);
+		const client = connectionManager.getJudgeClient(val.serverid, ConnectionType.JUDGE_QUERY);
+		if (!client || !client.isConnected()) throw new Error('Judge server not connected');
+		let response = await client.sendAndWait('R', val.value.toString(10));
+		if (response.status === "E") {
+			//just informs that this record file doesn't currently exists
+			//try to fetch short result instead
+			response = await client.sendAndWait('Q', val.value.toString(10));
+			const res = JSON.parse(response.content)
+			if (res.pts < 0) throw new Error('Bad record ID');
+			else return `["P",${response.content}]`;
+		}
+		const reslt = response.content;
+		const uid = JSON.parse(reslt).uid.toString();
+		client1.sendOnly('A', cookie);
+		response = await client1.sendAndWait('A', uid);
+		if (response.status !== "O") return `["Y",${reslt},"//You're not allowed to view this code!!!"]`;
+		response = await client.sendAndWait('C', val.value.toString(10));
+		const obj = ["Y", reslt, response.content];
+		return JSON.stringify(obj, null, 2);
+	}
+	catch (error) {
+		console.error('Failed to get record:', error.message);
+		return `["N",${error.message}]`;
+	}
+}
+
+/**
+ * get a list of records
+ * @param {any} cookie
+ * @param {any} page
+ * @returns {Array} ["Y"/"N",[record list]/error]
+ */
+async function getrecordlist(cookie, page) {
+	const client1 = connectionManager.getMiddleA();
+	try {
+		if (!client1 || !client1.isConnected()) throw new Error('Account server not connected');
+		let response = await client1.sendAndWait('V', cookie);
+		if (response.content !== "Y") throw "IDK?";
+		const uids = getuid(cookie);
+		client1.sendOnly('G', uids);
+		response = await client1.sendAndWait('G', page);
+		if (response.status === "O") return `["Y",${response.content}]`;
+		else return `["N",${response.content}]`;
+	} catch (error) {
+		console.error('Failed to get record:', error.message);
+		return `["N",${error.message}]`;
+	}
+}
+
+/**
+ * post a private message
+ * @param {any} cookie
+ * @param {any} target
+ * @param {any} content
+ * @returns {String} "Y"/"N"
+ */
+async function postmsg(cookie, target, content) {
+	const client = connectionManager.getMiddleM();
+	const client1 = connectionManager.getMiddleA();
+	try {
+		if (!client1 || !client1.isConnected()) throw new Error('Account server not connected');
+		if (!client || !client.isConnected()) throw new Error('Message server not connected');
+		let response = await client1.sendAndWait('V', cookie);
+		if (response.content !== "Y") throw "IDK?";
+		const uids = getuid(cookie);
+		client.sendOnly('R', uids);
+		client.sendOnly('R', content);
+		response = await client.sendAndWait('R', target);
+		if (response.status === "O") return "Y";
+		else return "N";
+	}
+	catch (error) {
+		console.error('Failed to get post message:', error.message);
+		return "N";
+	}
+}
+
+/**
+ * get one page of messages
+ * @param {any} cookie
+ * @param {any} page
+ * @returns {Array} ["Y"/"N",[message list]/error]
+ */
+async function getmsg(cookie, page) {
+	const client = connectionManager.getMiddleM();
+	const client1 = connectionManager.getMiddleA();
+	try {
+		if (!client1 || !client1.isConnected()) throw new Error('Account server not connected');
+		if (!client || !client.isConnected()) throw new Error('Message server not connected');
+		let response = await client1.sendAndWait('V', cookie);
+		if (response.content !== "Y") throw "IDK?";
+		const uids = getuid(cookie);
+		client.sendOnly('G', uids);
+		response = await client.sendAndWait('G', page);
+		if (response.status === "O") return `["Y",${response.content}]`;
+		else return `["N",${response.content}]`;
+	}
+	catch (error) {
+		console.error('Failed to get post message:', error.message);
 		return `["N",${error.message}]`;
 	}
 }
@@ -689,7 +899,7 @@ module.exports = {
 	connectionManager,
 	initializeConnections,
 
-	// API函数
+	//API functions
 	//account
 	verify_cookie,
 	login,
@@ -700,6 +910,21 @@ module.exports = {
 	postchat,
 	getchat,
 
+	//submit
+	submit,
+
+	//record(list)
+	getrecord,
+	getrecordlist,
+
+	//message
+	postmsg,
+	getmsg,
+
+	//problem(list)
+
+
+	//meaningless(?) preserved
 	getJudgeServerConfig: (judgeId) => {
 		const server = config.judgeServerMap[judgeId];
 		if (!server) {

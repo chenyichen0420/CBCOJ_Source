@@ -74,6 +74,50 @@ async function handle_api(req, res) {
 		else
 			res.writeHead(403, { 'Content-Type': 'text/plain' }),
 				res.end('Forbidden: Request method not allowed');
+	else if (parsed_url.pathname === '/api/record')
+		if (req.method === 'GET')
+			api.getrecord(parsed_url, res);
+		else
+			res.writeHead(403, { 'Content-Type': 'text/plain' }),
+				res.end('Forbidden: Request method not allowed');
+	else if (parsed_url.pathname === '/api/recordlist')
+		if (req.method === 'GET')
+			api.getrecordlist(parsed_url, res);
+		else
+			res.writeHead(403, { 'Content-Type': 'text/plain' }),
+				res.end('Forbidden: Request method not allowed');
+	else if (parsed_url.pathname === '/api/submit')
+		if (req.method === 'POST') {
+			let body = '';
+			req.setEncoding('utf8');
+			req.on('data', chunk => {
+				body += chunk.toString();
+			});
+			req.on('end', () => {
+				try {
+					const bodyData = body ? JSON.parse(body) : {};
+					api.submit(bodyData, res);
+				} catch (error) {
+					res.writeHead(500, { 'Content-Type': 'text/plain' });
+					res.end('Server Internal Error');
+				}
+			});
+		}
+		else
+			res.writeHead(403, { 'Content-Type': 'text/plain' }),
+				res.end('Forbidden: Request method not allowed');
+	else if (parsed_url.pathname === '/api/postmsg')
+		if (req.method === 'GET')
+			api.postmsg(parsed_url, res);
+		else
+			res.writeHead(403, { 'Content-Type': 'text/plain' }),
+				res.end('Forbidden: Request method not allowed');
+	else if (parsed_url.pathname === '/api/getmsg')
+		if (req.method === 'GET')
+			api.getmsg(parsed_url, res);
+		else
+			res.writeHead(403, { 'Content-Type': 'text/plain' }),
+				res.end('Forbidden: Request method not allowed');
 	else
 		res.writeHead(400, { 'Content-Type': 'text/plain' }),
 			res.end('Bad request: Unknown interface');
