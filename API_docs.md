@@ -182,6 +182,16 @@ Returns:
   note that "timelm" stands for time limit in ms, "memlm" stands for memory limit in MiB.
 ```
 
+### Get Problem List
+```
+GET /getproblemlist
+Parameters:
+  page (num) - Page number
+Returns:
+  [pid list] - Success, returns Pid list
+  Fall back to text/plain(status code 500) if critical Failure.
+```
+
 ---
 
 **Notes:**
