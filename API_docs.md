@@ -25,6 +25,16 @@ Returns:
   ["N", error] - Failure, returns error message
 ```
 
+### Get Short User Information
+```
+GET /getinfoshort
+Parameters:
+  cookie (string) - Cookie value
+Returns:
+  ["Y", [username, publiccode]] - Success
+  ["N", error] - Failure
+```
+
 ### Update User Information
 ```
 GET /updinfo
