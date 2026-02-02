@@ -142,6 +142,36 @@ Returns:
   ["N", error] - Failure, returns error message
 ```
 
+## Problem
+
+### Get Problem
+```
+GET /getproblem
+Parameters:
+  pid (string) - Problem ID
+Returns:
+  JSON(fully user-defined value)
+  *** Webpage recognizes following structure:
+  {
+    "title":string,
+    "background":string,
+    "description":string,
+    "inputfmt":string,
+    "outputfmt":string,
+    "sample":[
+      {
+        "input": string,
+        "output":string
+      },
+      ...
+    ],
+    "hint":string,
+    "timelm":num,
+    "memlm":num
+  }
+  note that "timelm" stands for time limit in ms, "memlm" stands for memory limit in MiB.
+```
+
 ---
 
 **Notes:**
