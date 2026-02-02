@@ -18,7 +18,7 @@ async function login(parsed_url, res) {
 		const usrname = parsed_url.query.usrname;
 		const paswd = parsed_url.query.paswd;
 		const ret = await webcon.login(usrname, paswd);
-		res.writeHead(200, { 'Content-Type': 'text/plain' });
+		res.writeHead(200, { 'Content-Type': 'text/json' });
 		res.end(ret);
 	}
 	catch (error) {
@@ -62,7 +62,7 @@ async function newchat(parsed_url, res) {
 		const cookie = parsed_url.query.cookie;
 		const content = parsed_url.query.content;
 		ret = await webcon.newchat(cookie, content);
-		res.writeHead(200, { 'Content-Type': 'text/plain' });
+		res.writeHead(200, { 'Content-Type': 'text/json' });
 		res.end(ret);
 	}
 	catch (error) {
@@ -94,7 +94,7 @@ async function getchat(parsed_url, res) {
 		const cid = parsed_url.query.cid;
 		const page = parsed_url.query.page;
 		ret = await webcon.getchat(cookie, cid, page);
-		res.writeHead(200, { 'Content-Type': 'text/plain' });
+		res.writeHead(200, { 'Content-Type': 'text/json' });
 		res.end(ret);
 	}
 	catch (error) {
@@ -112,7 +112,7 @@ async function submit(body, res) {
 		const lan = body.lan;
 		const code = body.code;
 		ret = await webcon.submit(cookie, pid, lan, code);
-		res.writeHead(200, { 'Content-Type': 'text/plain' });
+		res.writeHead(200, { 'Content-Type': 'text/json' });
 		res.end(ret);
 	}
 	catch (error) {
@@ -126,7 +126,7 @@ async function getrecord(parsed_url, res) {
 		const cookie = parsed_url.query.cookie;
 		const rid = parsed_url.query.rid;
 		ret = await webcon.getrecord(cookie, rid);
-		res.writeHead(200, { 'Content-Type': 'text/plain' });
+		res.writeHead(200, { 'Content-Type': 'text/json' });
 		res.end(ret);
 	}
 	catch (error) {
@@ -140,7 +140,7 @@ async function getrecordlist(parsed_url, res) {
 		const cookie = parsed_url.query.cookie;
 		const page = parsed_url.query.page;
 		ret = await webcon.getrecord(cookie, page);
-		res.writeHead(200, { 'Content-Type': 'text/plain' });
+		res.writeHead(200, { 'Content-Type': 'text/json' });
 		res.end(ret);
 	}
 	catch (error) {
@@ -170,7 +170,7 @@ async function getmsg(parsed_url, res) {
 		const cookie = parsed_url.query.cookie;
 		const page = parsed_url.query.page;
 		ret = await webcon.getmsg(cookie, page);
-		res.writeHead(200, { 'Content-Type': 'text/plain' });
+		res.writeHead(200, { 'Content-Type': 'text/json' });
 		res.end(ret);
 	}
 	catch (error) {
