@@ -84,8 +84,8 @@ Parameters:
   cookie (string) - Cookie value
   rid (string) - Record ID
 Returns:
-  ["P", JSON result] - Success, but the judger haven't finished judging, returns a simple report.
   ["N", error] - Failure, returns error message.
+  ["P", JSON result] - Success, but the judger haven't finished judging, returns a simple report.
   ["Y", JSON result, Text code] - Success, the judger have finished judging, returns a detailed report and source code.
 ```
 
