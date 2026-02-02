@@ -13,8 +13,8 @@ function losepar(parname, query, res) {
 
 async function login(parsed_url, res) {
 	try {
-		if (losepar('usrname', query, res)) return;
-		if (losepar('paswd', query, res)) return;
+		if (losepar('usrname', parsed_url.query, res)) return;
+		if (losepar('paswd', parsed_url.query, res)) return;
 		const usrname = parsed_url.query.usrname;
 		const paswd = parsed_url.query.paswd;
 		const ret = await webcon.login(usrname, paswd);
@@ -27,7 +27,7 @@ async function login(parsed_url, res) {
 }
 async function verify_cookie(parsed_url, res) {
 	try {
-		if (losepar('cookie', query, res)) return;
+		if (losepar('cookie', parsed_url.query, res)) return;
 		const cookie = parsed_url.query.cookie;
 		const ret = await webcon.verify_cookie(cookie);
 		res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -39,10 +39,10 @@ async function verify_cookie(parsed_url, res) {
 }
 async function updinfo(parsed_url, res) {
 	try {
-		if (losepar('cookie', query, res)) return;
-		if (losepar('usrname', query, res)) return;
-		if (losepar('paswd', query, res)) return;
-		if (losepar('pubcode', query, res)) return;
+		if (losepar('cookie', parsed_url.query, res)) return;
+		if (losepar('usrname', parsed_url.query, res)) return;
+		if (losepar('paswd', parsed_url.query, res)) return;
+		if (losepar('pubcode', parsed_url.query, res)) return;
 		const cookie = parsed_url.query.cookie;
 		const usrname = parsed_url.query.usrname;
 		const paswd = parsed_url.query.paswd;
@@ -57,8 +57,8 @@ async function updinfo(parsed_url, res) {
 }
 async function newchat(parsed_url, res) {
 	try {
-		if (losepar('cookie', query, res)) return;
-		if (losepar('content', query, res)) return;
+		if (losepar('cookie', parsed_url.query, res)) return;
+		if (losepar('content', parsed_url.query, res)) return;
 		const cookie = parsed_url.query.cookie;
 		const content = parsed_url.query.content;
 		ret = await webcon.newchat(cookie, content);
@@ -71,9 +71,9 @@ async function newchat(parsed_url, res) {
 }
 async function postchat(parsed_url, res) {
 	try {
-		if (losepar('cookie', query, res)) return;
-		if (losepar('cid', query, res)) return;
-		if (losepar('content', query, res)) return;
+		if (losepar('cookie', parsed_url.query, res)) return;
+		if (losepar('cid', parsed_url.query, res)) return;
+		if (losepar('content', parsed_url.query, res)) return;
 		const cookie = parsed_url.query.cookie;
 		const cid = parsed_url.query.cid;
 		const content = parsed_url.query.content;
@@ -87,9 +87,9 @@ async function postchat(parsed_url, res) {
 }
 async function getchat(parsed_url, res) {
 	try {
-		if (losepar('cookie', query, res)) return;
-		if (losepar('cid', query, res)) return;
-		if (losepar('page', query, res)) return;
+		if (losepar('cookie', parsed_url.query, res)) return;
+		if (losepar('cid', parsed_url.query, res)) return;
+		if (losepar('page', parsed_url.query, res)) return;
 		const cookie = parsed_url.query.cookie;
 		const cid = parsed_url.query.cid;
 		const page = parsed_url.query.page;
@@ -121,8 +121,8 @@ async function submit(body, res) {
 }
 async function getrecord(parsed_url, res) {
 	try {
-		if (losepar('cookie', query, res)) return;
-		if (losepar('rid', query, res)) return;
+		if (losepar('cookie', parsed_url.query, res)) return;
+		if (losepar('rid', parsed_url.query, res)) return;
 		const cookie = parsed_url.query.cookie;
 		const rid = parsed_url.query.rid;
 		ret = await webcon.getrecord(cookie, rid);
@@ -135,8 +135,8 @@ async function getrecord(parsed_url, res) {
 }
 async function getrecordlist(parsed_url, res) {
 	try {
-		if (losepar('cookie', query, res)) return;
-		if (losepar('page', query, res)) return;
+		if (losepar('cookie', parsed_url.query, res)) return;
+		if (losepar('page', parsed_url.query, res)) return;
 		const cookie = parsed_url.query.cookie;
 		const page = parsed_url.query.page;
 		ret = await webcon.getrecord(cookie, page);
@@ -149,9 +149,9 @@ async function getrecordlist(parsed_url, res) {
 }
 async function postmsg(parsed_url, res) {
 	try {
-		if (losepar('cookie', query, res)) return;
-		if (losepar('target', query, res)) return;
-		if (losepar('content', query, res)) return;
+		if (losepar('cookie', parsed_url.query, res)) return;
+		if (losepar('target', parsed_url.query, res)) return;
+		if (losepar('content', parsed_url.query, res)) return;
 		const cookie = parsed_url.query.cookie;
 		const target = parsed_url.query.target;
 		const content = parsed_url.query.content;
@@ -165,8 +165,8 @@ async function postmsg(parsed_url, res) {
 }
 async function getmsg(parsed_url, res) {
 	try {
-		if (losepar('cookie', query, res)) return;
-		if (losepar('page', query, res)) return;
+		if (losepar('cookie', parsed_url.query, res)) return;
+		if (losepar('page', parsed_url.query, res)) return;
 		const cookie = parsed_url.query.cookie;
 		const page = parsed_url.query.page;
 		ret = await webcon.getmsg(cookie, page);
