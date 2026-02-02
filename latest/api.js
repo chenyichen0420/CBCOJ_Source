@@ -4,7 +4,7 @@ webcon.initializeConnections();
 function losepar(parname, query, res) {
 	const has = parname in query;
 	if (!has) {
-		res.writeHead(400, { 'Content-Type': 'text/plain' });
+		res.writeHead(400, { 'Content-Type': 'text/plain' , 'Access-Control-Allow-Origin':'*'  });
 		res.end(`Bad Request: Param "${parname}" lost`);
 		return 1;
 	}
@@ -18,7 +18,7 @@ async function login(parsed_url, res) {
 		const usrname = parsed_url.query.usrname;
 		const paswd = parsed_url.query.paswd;
 		const ret = await webcon.login(usrname, paswd);
-		res.writeHead(200, { 'Content-Type': 'text/json' });
+		res.writeHead(200, { 'Content-Type': 'application/json' , 'Access-Control-Allow-Origin':'*'  });
 		res.end(ret);
 	}
 	catch (error) {
@@ -30,7 +30,7 @@ async function verify_cookie(parsed_url, res) {
 		if (losepar('cookie', parsed_url.query, res)) return;
 		const cookie = parsed_url.query.cookie;
 		const ret = await webcon.verify_cookie(cookie);
-		res.writeHead(200, { 'Content-Type': 'text/plain' });
+		res.writeHead(200, { 'Content-Type': 'text/plain' , 'Access-Control-Allow-Origin':'*'  });
 		res.end(ret);
 	}
 	catch (error) {
@@ -48,7 +48,7 @@ async function updinfo(parsed_url, res) {
 		const paswd = parsed_url.query.paswd;
 		const pubcode = parsed_url.query.pubcode;
 		ret = await webcon.updinfo(cookie, usrname, paswd, pubcode);
-		res.writeHead(200, { 'Content-Type': 'text/plain' });
+		res.writeHead(200, { 'Content-Type': 'text/plain' , 'Access-Control-Allow-Origin':'*'  });
 		res.end(ret.content);
 	}
 	catch (error) {
@@ -62,7 +62,7 @@ async function newchat(parsed_url, res) {
 		const cookie = parsed_url.query.cookie;
 		const content = parsed_url.query.content;
 		ret = await webcon.newchat(cookie, content);
-		res.writeHead(200, { 'Content-Type': 'text/json' });
+		res.writeHead(200, { 'Content-Type': 'application/json' , 'Access-Control-Allow-Origin':'*'  });
 		res.end(ret);
 	}
 	catch (error) {
@@ -78,7 +78,7 @@ async function postchat(parsed_url, res) {
 		const cid = parsed_url.query.cid;
 		const content = parsed_url.query.content;
 		ret = await webcon.postchat(cookie, cid, content);
-		res.writeHead(200, { 'Content-Type': 'text/plain' });
+		res.writeHead(200, { 'Content-Type': 'text/plain' , 'Access-Control-Allow-Origin':'*'  });
 		res.end(ret);
 	}
 	catch (error) {
@@ -94,7 +94,7 @@ async function getchat(parsed_url, res) {
 		const cid = parsed_url.query.cid;
 		const page = parsed_url.query.page;
 		ret = await webcon.getchat(cookie, cid, page);
-		res.writeHead(200, { 'Content-Type': 'text/json' });
+		res.writeHead(200, { 'Content-Type': 'application/json' , 'Access-Control-Allow-Origin':'*'  });
 		res.end(ret);
 	}
 	catch (error) {
@@ -112,7 +112,7 @@ async function submit(body, res) {
 		const lan = body.lan;
 		const code = body.code;
 		ret = await webcon.submit(cookie, pid, lan, code);
-		res.writeHead(200, { 'Content-Type': 'text/json' });
+		res.writeHead(200, { 'Content-Type': 'application/json' , 'Access-Control-Allow-Origin':'*'  });
 		res.end(ret);
 	}
 	catch (error) {
@@ -126,7 +126,7 @@ async function getrecord(parsed_url, res) {
 		const cookie = parsed_url.query.cookie;
 		const rid = parsed_url.query.rid;
 		ret = await webcon.getrecord(cookie, rid);
-		res.writeHead(200, { 'Content-Type': 'text/json' });
+		res.writeHead(200, { 'Content-Type': 'application/json' , 'Access-Control-Allow-Origin':'*'  });
 		res.end(ret);
 	}
 	catch (error) {
@@ -140,7 +140,7 @@ async function getrecordlist(parsed_url, res) {
 		const cookie = parsed_url.query.cookie;
 		const page = parsed_url.query.page;
 		ret = await webcon.getrecord(cookie, page);
-		res.writeHead(200, { 'Content-Type': 'text/json' });
+		res.writeHead(200, { 'Content-Type': 'application/json' , 'Access-Control-Allow-Origin':'*'  });
 		res.end(ret);
 	}
 	catch (error) {
@@ -156,7 +156,7 @@ async function postmsg(parsed_url, res) {
 		const target = parsed_url.query.target;
 		const content = parsed_url.query.content;
 		ret = await webcon.postmsg(cookie, target, content);
-		res.writeHead(200, { 'Content-Type': 'text/plain' });
+		res.writeHead(200, { 'Content-Type': 'text/plain' , 'Access-Control-Allow-Origin':'*'  });
 		res.end(ret);
 	}
 	catch (error) {
@@ -170,7 +170,7 @@ async function getmsg(parsed_url, res) {
 		const cookie = parsed_url.query.cookie;
 		const page = parsed_url.query.page;
 		ret = await webcon.getmsg(cookie, page);
-		res.writeHead(200, { 'Content-Type': 'text/json' });
+		res.writeHead(200, { 'Content-Type': 'application/json' , 'Access-Control-Allow-Origin':'*'  });
 		res.end(ret);
 	}
 	catch (error) {
@@ -181,7 +181,7 @@ async function getmsg(parsed_url, res) {
 function handle_api_err(res, message, error) {
 	console.error(`${message}:`, error);
 	res.writeHead(500, {
-		'Content-Type': 'application/json',
+		'Content-Type': 'application/json' , 'Access-Control-Allow-Origin':'*' ,
 		'Access-Control-Allow-Origin': '*'
 	});
 	res.end(JSON.stringify({
