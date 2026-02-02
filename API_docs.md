@@ -14,7 +14,7 @@ Returns:
   "N" - Invalid
 ```
 
-### User Login
+### Login
 ```
 GET /login
 Parameters:
@@ -71,19 +71,22 @@ Parameters:
   cid (string) - Discussion ID
   page (num) - Page number
 Returns:
-  JSON - Chat history data
+  ["Y", [list]] - Success, returns Discussion list
+  ["N", error] - Failure, returns error message
 ```
 
 ## Record Management
 
-### Get Record Details
+### Get Record Detail
 ```
 GET /record
 Parameters:
   cookie (string) - Cookie value
   rid (string) - Record ID
 Returns:
-  JSON - Record details data
+  ["P", JSON result] - Success, but the judger haven't finished judging, returns a simple report.
+  ["N", error] - Failure, returns error message.
+  ["Y", JSON result, Text code] - Success, the judger have finished judging, returns a detailed report and source code.
 ```
 
 ### Get Record List
@@ -94,7 +97,8 @@ Parameters:
   target (string) - Target user/filter condition
   page (num) - Page number
 Returns:
-  JSON - Record list data
+  ["Y", [list]] - Success, returns Record list
+  ["N", error] - Failure, returns error message
 ```
 
 ## Submission
@@ -127,14 +131,15 @@ Returns:
   "N" - Failure
 ```
 
-### Get Messages
+### Get Message
 ```
 GET /getmsg
 Parameters:
   cookie (string) - Cookie value
   page (num) - Page number
 Returns:
-  JSON - Message list data
+  ["Y", [list]] - Success, returns Message list
+  ["N", error] - Failure, returns error message
 ```
 
 ---
