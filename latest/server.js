@@ -56,21 +56,21 @@ async function handle_api(req, res) {
 		else
 			res.writeHead(403, { 'Content-Type': 'text/plain' }),
 				res.end('Forbidden: Request method not allowed');
-	else if (parsed_url.pathname === '/api/newchat')
+	else if (parsed_url.pathname === '/api/newdisc')
 		if (req.method === 'GET')
-			api.newchat(parsed_url, res);
+			api.newdisc(parsed_url, res);
 		else
 			res.writeHead(403, { 'Content-Type': 'text/plain' }),
 				res.end('Forbidden: Request method not allowed');
-	else if (parsed_url.pathname === '/api/postchat')
+	else if (parsed_url.pathname === '/api/postdisc')
 		if (req.method === 'GET')
-			api.postchat(parsed_url, res);
+			api.postdisc(parsed_url, res);
 		else
 			res.writeHead(403, { 'Content-Type': 'text/plain' }),
 				res.end('Forbidden: Request method not allowed');
-	else if (parsed_url.pathname === '/api/getchat')
+	else if (parsed_url.pathname === '/api/getdisc')
 		if (req.method === 'GET')
-			api.getchat(parsed_url, res);
+			api.getdisc(parsed_url, res);
 		else
 			res.writeHead(403, { 'Content-Type': 'text/plain' }),
 				res.end('Forbidden: Request method not allowed');

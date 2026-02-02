@@ -8,7 +8,7 @@ const ConnectionState = {
 	ERROR: 'error'
 };
 const ConnectionType = {
-	JUDGE_CHAT: 'judge_chat',
+	JUDGE_DISC: 'judge_disc',
 	JUDGE_SUBMIT: 'judge_submit',
 	JUDGE_QUERY: 'judge_query',
 	MIDDLE_ACCOUNT: 'middle_account',
@@ -355,12 +355,12 @@ class ConnectionManager {
 		// 连接所有评测机
 		if (config.judgeServers && config.judgeServers.length > 0) {
 			for (const server of config.judgeServers) {
-				if (server.chatPort) {
+				if (server.discPort) {
 					await this.createAndConnectClient(
 						server.id,
 						server.ip,
-						server.chatPort,
-						ConnectionType.JUDGE_CHAT
+						server.discPort,
+						ConnectionType.JUDGE_DISC
 					);
 				}
 				if (server.judgePort) {
@@ -457,8 +457,8 @@ class ConnectionManager {
 
 		let port;
 		switch (type) {
-			case ConnectionType.JUDGE_CHAT:
-				port = server.chatPort;
+			case ConnectionType.JUDGE_DISC:
+				port = server.discPort;
 				break;
 			case ConnectionType.JUDGE_SUBMIT:
 				port = server.judgePort;
@@ -603,26 +603,26 @@ function parseid(fullId) {
 }
 
 /**
- * start a public chat
+ * start a publicdiscussion
  * @param {any} cookie
  * @param {any} content
  * @returns {Array} ["Y"/"N", cid/error]
  */
-async function newchat(cookie, content) {
+async function newdisc(cookie, content) {
 	let client = connectionManager.getMiddleA();
 	try {
 		if (!client || !client.isConnected()) throw new Error('Account server not connected');
 		const response = await client.sendAndWait('V', cookie);
 		if (response.content !== "Y") throw "IDK?";
 	} catch (error) {
-		console.error('Failed to create chat(cookie err):', error.message);
+		console.error('Failed to creatediscussion(cookie err):', error.message);
 		return `["N",${error.message}]`;
 	}
 	//passed cookie check
 	try {
-		const server = connectionManager.selectJudgeServerId(ConnectionType.JUDGE_CHAT);
-		client = connectionManager.getJudgeClient(server, ConnectionType.JUDGE_CHAT);
-		if (!client || !client.isConnected()) throw new Error('Chat server not connected');
+		const server = connectionManager.selectJudgeServerId(ConnectionType.JUDGE_DISC);
+		client = connectionManager.getJudgeClient(server, ConnectionType.JUDGE_DISC);
+		if (!client || !client.isConnected()) throw new Error('Discussion server not connected');
 		const response = await client.sendAndWait('S', content);
 		if (response.status === "Y") {
 			const nid = buildid(server, response.content);
@@ -631,33 +631,33 @@ async function newchat(cookie, content) {
 		throw "IDK?";
 	}
 	catch (error) {
-		console.error('Failed to create chat:', error.message);
+		console.error('Failed to creatediscussion:', error.message);
 		return `["N",${error.message}]`;
 	}
 }
 
 /**
- * post a chat
+ * post adiscussion
  * @param {any} cookie
  * @param {any} cid
  * @param {any} content
  * @returns {string} "Y"/"N"
  */
-async function postchat(cookie, cid, content) {
+async function postdisc(cookie, cid, content) {
 	let client = connectionManager.getMiddleA();
 	try {
 		if (!client || !client.isConnected()) throw new Error('Account server not connected');
 		const response = await client.sendAndWait('V', cookie);
 		if (response.content !== "Y") throw "IDK?";
 	} catch (error) {
-		console.error('Failed to post chat(cookie err):', error.message);
+		console.error('Failed to postdiscussion(cookie err):', error.message);
 		return "N";
 	}
 	//passed cookie check
 	try {
 		const val = parseid(cid);
-		client = connectionManager.getJudgeClient(val.serverid, ConnectionType.JUDGE_CHAT);
-		if (!client || !client.isConnected()) throw new Error('Chat server not connected');
+		client = connectionManager.getJudgeClient(val.serverid, ConnectionType.JUDGE_DISC);
+		if (!client || !client.isConnected()) throw new Error('Discussion server not connected');
 		client.sendOnly('P', val.value.toString(10));
 		const response = await client.sendAndWait('S', content);
 		console.log(response)
@@ -665,40 +665,40 @@ async function postchat(cookie, cid, content) {
 		throw "IDK?";
 	}
 	catch (error) {
-		console.error('Failed to post chat:', error.message);
+		console.error('Failed to postdiscussion:', error.message);
 		return "N";
 	}
 }
 
 /**
- * fetch one page of a chat
+ * fetch one page of adiscussion
  * @param {any} cookie
  * @param {any} cid
  * @param {any} page
  * @returns {Array} ["Y"/"N", [content list]/error]
  */
-async function getchat(cookie, cid, page) {
+async function getdisc(cookie, cid, page) {
 	let client = connectionManager.getMiddleA();
 	try {
 		if (!client || !client.isConnected()) throw new Error('Account server not connected');
 		const response = await client.sendAndWait('V', cookie);
 		if (response.content !== "Y") throw "IDK?";
 	} catch (error) {
-		console.error('Failed to get chat(cookie err):', error.message);
+		console.error('Failed to getdiscussion(cookie err):', error.message);
 		return `["N",${error.message}]`;
 	}
 	//passed cookie check
 	try {
 		const val = parseid(cid);
-		client = connectionManager.getJudgeClient(val.serverid, ConnectionType.JUDGE_CHAT);
-		if (!client || !client.isConnected()) throw new Error('Chat server not connected');
+		client = connectionManager.getJudgeClient(val.serverid, ConnectionType.JUDGE_DISC);
+		if (!client || !client.isConnected()) throw new Error('Discussion server not connected');
 		client.sendOnly('G', val.value.toString(10));
 		const response = await client.sendAndWait('S', page);
 		if (response.status === "Y") return `["Y",${response.content}]`;
 		throw "IDK?";
 	}
 	catch (error) {
-		console.error('Failed to get chat:', error.message);
+		console.error('Failed to getdiscussion:', error.message);
 		return `["N",${error.message}]`;
 	}
 }
@@ -905,10 +905,10 @@ module.exports = {
 	login,
 	updinfo,
 
-	//chat
-	newchat,
-	postchat,
-	getchat,
+	//disc
+	newdisc,
+	postdisc,
+	getdisc,
 
 	//submit
 	submit,

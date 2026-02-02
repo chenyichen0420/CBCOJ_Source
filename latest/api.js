@@ -55,21 +55,21 @@ async function updinfo(parsed_url, res) {
 		handle_api_err(res, 'Failed to update info', error);
 	}
 }
-async function newchat(parsed_url, res) {
+async function newdisc(parsed_url, res) {
 	try {
 		if (losepar('cookie', parsed_url.query, res)) return;
 		if (losepar('content', parsed_url.query, res)) return;
 		const cookie = parsed_url.query.cookie;
 		const content = parsed_url.query.content;
-		ret = await webcon.newchat(cookie, content);
+		ret = await webcon.newdisc(cookie, content);
 		res.writeHead(200, { 'Content-Type': 'application/json' , 'Access-Control-Allow-Origin':'*'  });
 		res.end(ret);
 	}
 	catch (error) {
-		handle_api_err(res, 'Failed to create chat', error);
+		handle_api_err(res, 'Failed to creatediscussion', error);
 	}
 }
-async function postchat(parsed_url, res) {
+async function postdisc(parsed_url, res) {
 	try {
 		if (losepar('cookie', parsed_url.query, res)) return;
 		if (losepar('cid', parsed_url.query, res)) return;
@@ -77,15 +77,15 @@ async function postchat(parsed_url, res) {
 		const cookie = parsed_url.query.cookie;
 		const cid = parsed_url.query.cid;
 		const content = parsed_url.query.content;
-		ret = await webcon.postchat(cookie, cid, content);
+		ret = await webcon.postdisc(cookie, cid, content);
 		res.writeHead(200, { 'Content-Type': 'text/plain' , 'Access-Control-Allow-Origin':'*'  });
 		res.end(ret);
 	}
 	catch (error) {
-		handle_api_err(res, 'Failed to post chat', error);
+		handle_api_err(res, 'Failed to postdiscussion', error);
 	}
 }
-async function getchat(parsed_url, res) {
+async function getdisc(parsed_url, res) {
 	try {
 		if (losepar('cookie', parsed_url.query, res)) return;
 		if (losepar('cid', parsed_url.query, res)) return;
@@ -93,12 +93,12 @@ async function getchat(parsed_url, res) {
 		const cookie = parsed_url.query.cookie;
 		const cid = parsed_url.query.cid;
 		const page = parsed_url.query.page;
-		ret = await webcon.getchat(cookie, cid, page);
+		ret = await webcon.getdisc(cookie, cid, page);
 		res.writeHead(200, { 'Content-Type': 'application/json' , 'Access-Control-Allow-Origin':'*'  });
 		res.end(ret);
 	}
 	catch (error) {
-		handle_api_err(res, 'Failed to get chat', error);
+		handle_api_err(res, 'Failed to getdiscussion', error);
 	}
 }
 async function submit(body, res) {
@@ -196,9 +196,9 @@ module.exports = {
 	login,
 	updinfo,
 
-	newchat,
-	postchat,
-	getchat,
+	newdisc,
+	postdisc,
+	getdisc,
 
 	submit,
 
