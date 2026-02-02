@@ -38,37 +38,37 @@ Returns:
   "N" - Failure
 ```
 
-## Chat Management
+## Discussion Management
 
-### Create New Chat
+### Create New Discussion
 ```
-GET /newchat
+GET /newdisc
 Parameters:
   cookie (string) - Cookie value
   content (string) - Initial content
 Returns:
-  ["Y", cid] - Success, returns Chat ID
+  ["Y", cid] - Success, returns discussion ID
   ["N", error] - Failure, returns error message
 ```
 
-### Post Chat Message
+### Post Discussion Message
 ```
-GET /postchat
+GET /postdisc
 Parameters:
   cookie (string) - Cookie value
-  content (string) - Message content
-  cid (string) - Chat ID
+  content (string) - Discussion content
+  cid (string) - Discussion ID
 Returns:
   "Y" - Success
   "N" - Failure
 ```
 
-### Get Chat History
+### Get Discussion History
 ```
-GET /getchat
+GET /getdisc
 Parameters:
   cookie (string) - Cookie value
-  cid (string) - Chat ID
+  cid (string) - Discussion ID
   page (num) - Page number
 Returns:
   JSON - Chat history data
@@ -144,3 +144,4 @@ Returns:
 2. When return value is an array, the first element indicates success/failure status
 3. All endpoints require a valid Cookie value (except /login)
 4. Page numbers start from 1
+5. If there's a conflict with the source code, refer to the code.
