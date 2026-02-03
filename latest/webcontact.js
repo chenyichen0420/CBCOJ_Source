@@ -566,6 +566,36 @@ async function login(username, password) {
 	}
 }
 
+function getuid(cookie) {
+	if (!cookie || cookie.length < 2) return null;
+	const lenChar = cookie[0];
+	const uidLength = parseInt(lenChar, 10);
+	if (isNaN(uidLength) || uidLength <= 0) return null;
+	if (cookie.length < 1 + uidLength) return null;
+	const uid = cookie.substring(1, 1 + uidLength);
+	return uid;
+}
+
+/**
+ * get account info(short, only contains username and public code setting)
+ * @param {any} cookie
+ * @returns {Array} ["Y"/"N",[username, publiccode]/error]
+ */
+async function getinfoshort(cookie) {
+	const client = connectionManager.getMiddleA();
+	try {
+		if (!client || !client.isConnected()) throw new Error('Account server not connected');
+		let response = await client.sendAndWait('V', cookie);
+		if (response.content === "N") return `["N",${response.content}]`;
+		const uids = getuid(cookie);
+		response = await client.sendAndWait('Q', uids);
+		return `["Y",${response.content}]`;
+	} catch (error) {
+		console.error('Failed to get account info:', error.message);
+		return `["N",${error.message}]`;
+	}
+}
+
 /**
  * update account info
  * @param {any} cookie
@@ -660,7 +690,6 @@ async function postdisc(cookie, cid, content) {
 		if (!client || !client.isConnected()) throw new Error('Discussion server not connected');
 		client.sendOnly('P', val.value.toString(10));
 		const response = await client.sendAndWait('S', content);
-		console.log(response)
 		if (response.content === "Y") return "Y";
 		throw "IDK?";
 	}
@@ -701,16 +730,6 @@ async function getdisc(cookie, cid, page) {
 		console.error('Failed to getdiscussion:', error.message);
 		return `["N",${error.message}]`;
 	}
-}
-
-function getuid(cookie) {
-	if (!cookie || cookie.length < 2) return null;
-	const lenChar = cookie[0];
-	const uidLength = parseInt(lenChar, 10);
-	if (isNaN(uidLength) || uidLength <= 0) return null;
-	if (cookie.length < 1 + uidLength) return null;
-	const uid = cookie.substring(1, 1 + uidLength);
-	return uid;
 }
 
 /**
@@ -890,6 +909,20 @@ async function getmsg(cookie, page) {
 	}
 }
 
+async function updproblemlist() {
+	const server = connectionManager.selectJudgeServerId(ConnectionType.JUDGE_SUBMIT);
+	const client = connectionManager.getJudgeClient(server, ConnectionType.JUDGE_SUBMIT);
+	try {
+		if (!client || !client.isConnected()) throw new Error('Problem server not connected');
+		const ret = await client.sendAndWait('V', config.verinfo);
+		return ret.content;
+	}
+	catch (error) {
+		console.error('Failed to update problem list:', error.message);
+		return "[]";
+	}
+}
+
 module.exports = {
 	PersistentJudgeClient,
 	ConnectionManager,
@@ -903,6 +936,7 @@ module.exports = {
 	//account
 	verify_cookie,
 	login,
+	getinfoshort,
 	updinfo,
 
 	//disc
@@ -921,8 +955,8 @@ module.exports = {
 	postmsg,
 	getmsg,
 
-	//problem(list)
-
+	//problem list
+	updproblemlist,
 
 	//meaningless(?) preserved
 	getJudgeServerConfig: (judgeId) => {
