@@ -200,3 +200,31 @@ Returns:
 3. All endpoints require a valid Cookie value (except /login)
 4. Page numbers start from 1
 5. If there's a conflict with the source code, refer to the code.
+6. Result value mapping chart:
+  ```
+  constexpr int
+		JS_IQ = 202,
+		JS_CJ = 206,
+		JS_AC = 200,
+		JS_RJ = 403,
+		JS_NE = 404,
+		JS_CE = 400,
+		JS_TE = 408,
+		JS_ME = 413,
+		JS_RE = 502,
+		JS_WA = 406,
+		JS_SE = 500;
+	constexpr char
+		SN_IQ = 'I', //in queue
+		SN_CJ = 'J', //currently judging
+		SN_AC = 'A', //accepted
+		SN_RJ = 'B', //rejected(ban/ignored)
+		SN_NE = 'N', //Problem DNE
+		SN_CE = 'C', //compile error
+		SN_TE = 'T', //time limit exceeded
+		SN_ME = 'M', //memory limit exceeded
+		SN_RE = 'R', //runtime error
+		SN_WA = 'W', //wrong answer
+		SN_SE = 'S', //acceptable system error
+		SN_SCE = 'E'; //system critical error
+  ```
