@@ -81,7 +81,7 @@ Parameters:
   cid (string) - Discussion ID
   page (num) - Page number
 Returns:
-  ["Y", [list]] - Success, returns Discussion list
+  ["Y", [{"uid": num, "msg": string}, ...]] - Success, returns Discussion list. The first element is the title and author of this Discussion.
   ["N", error] - Failure, returns error message
 ```
 
@@ -107,7 +107,7 @@ Parameters:
   target (string) - Target user/filter condition
   page (num) - Page number
 Returns:
-  ["Y", [list]] - Success, returns Record list
+  ["Y", [rid list]] - Success, returns Record ID list
   ["N", error] - Failure, returns error message
 ```
 
@@ -148,7 +148,7 @@ Parameters:
   cookie (string) - Cookie value
   page (num) - Page number
 Returns:
-  ["Y", [list]] - Success, returns Message list
+  ["Y", [{"uid": num, "msg": string}, ...]] - Success, returns Message list
   ["N", error] - Failure, returns error message
 ```
 
