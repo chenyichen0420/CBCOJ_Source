@@ -88,9 +88,11 @@ async function newdisc(parsed_url, res) {
 	try {
 		if (losepar('cookie', parsed_url.query, res)) return;
 		if (losepar('content', parsed_url.query, res)) return;
+		if (losepar('title', parsed_url.query, res)) return;
 		const cookie = parsed_url.query.cookie;
 		const content = parsed_url.query.content;
-		ret = await webcon.newdisc(cookie, content);
+		const title = parsed_url.query.title;
+		ret = await webcon.newdisc(cookie, content, title);
 		res.writeHead(200, {
 			'Content-Type': 'application/json',
 			'Access-Control-Allow-Origin': '*'
@@ -236,6 +238,10 @@ async function getproblem(parsed_url, res) {
 		const file = `${parsed_url.query.pid}.json`;
 		fs.readFile(path.join(config.problempath, file), 'utf8', (err, data) => {
 			if (err) throw new Error(err);
+			res.writeHead(200, {
+				'Content-Type': 'application/json',
+				'Access-Control-Allow-Origin': '*'
+			});
 			res.end(data);
 		})
 	}

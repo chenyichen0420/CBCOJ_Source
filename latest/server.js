@@ -6,14 +6,14 @@ function wait(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 async function periodic_tasks() {
-	await wait(3000)
+	await wait(2000)
 	try {
 		await api.updproblemlist();
 	}
 	catch (error) {
 		
 	}
-	console.log(`periodic tasks runned`)
+	//console.log(`periodic tasks runned`)
 }
 setInterval(periodic_tasks, 2 * 60 * 1000);
 
@@ -42,7 +42,7 @@ const server = http.createServer((req, res) => {
 		handle_api(req, res);
 		return;
 	}
-
+	
 	res.writeHead(400, {
 		'Content-Type': 'text/plain',
 		'Access-Control-Allow-Origin': '*'
@@ -59,6 +59,16 @@ function method_not_allowed(res) {
 	res.end('Forbidden: Request method not allowed');
 }
 async function handle_api(req, res) {
+	if(req.method === 'OPTIONS') {
+		res.writeHead(200, {
+			'Content-Type': 'text/plain',
+			'Access-Control-Allow-Origin': '*',
+			'Access-Control-Allow-Methods':'*',
+			'Access-Control-Allow-Headers':'*'
+		});
+		res.end()
+		return;
+	}
 	const parsed_url = url.parse(req.url, true);
 	if (parsed_url.pathname === '/api/verifycookie')
 		if (req.method === 'GET')
@@ -129,6 +139,7 @@ async function handle_api(req, res) {
 					const bodyData = body ? JSON.parse(body) : {};
 					api.submit(bodyData, res);
 				} catch (error) {
+					console.log(error)
 					res.writeHead(500, {
 						'Content-Type': 'text/plain',
 						'Access-Control-Allow-Origin': '*'

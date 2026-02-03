@@ -1,38 +1,18 @@
 const net = require('net');
 const config = require('./config');
 const EventEmitter = require('events');
-const ConnectionState = {
-	DISCONNECTED: 'disconnected',
-	CONNECTING: 'connecting',
-	CONNECTED: 'connected',
-	ERROR: 'error'
-};
-const ConnectionType = {
-	JUDGE_DISC: 'judge_disc',
-	JUDGE_SUBMIT: 'judge_submit',
-	JUDGE_QUERY: 'judge_query',
-	MIDDLE_ACCOUNT: 'middle_account',
-	MIDDLE_MSG: 'middle_msg'
-};
-const Events = {
-	CONNECTED: 'connected',
-	DISCONNECTED: 'disconnected',
-	ERROR: 'error',
-	MESSAGE: 'message'
-};
 
 /**
  * 长连接客户端（带简单锁机制）
  */
 class PersistentJudgeClient extends EventEmitter {
-	constructor(serverId, ip, port, type) {
+	constructor(serverId, ip, port) {
 		super();
 		this.serverId = serverId;
 		this.ip = ip;
 		this.port = port;
-		this.type = type;
-		this.key = `${type}_${serverId}_${port}`;
-		this.state = ConnectionState.DISCONNECTED;
+		this.key = `${serverId}_${port}`;
+		this.state = 'disconnected';
 		this.socket = null;
 		this.buffer = Buffer.alloc(0);
 		this.reconnectTimer = null;
@@ -52,38 +32,36 @@ class PersistentJudgeClient extends EventEmitter {
 	 * 连接到服务器
 	 */
 	connect() {
-		if (this.state === ConnectionState.CONNECTED ||
-			this.state === ConnectionState.CONNECTING) {
+		if (this.state === 'connected' ||
+			this.state === 'connecting') {
 			return Promise.resolve(false);
 		}
 
-		this.state = ConnectionState.CONNECTING;
+		this.state = 'connecting';
 
 		return new Promise((resolve, reject) => {
 			try {
 				this.socket = new net.Socket();
 				this.socket.setKeepAlive(true, 10000);
-				// 移除了 socket.setTimeout(30000);
 				this.socket.on('connect', () => {
-					this.state = ConnectionState.CONNECTED;
+					this.state = 'connected';
 					console.log(`[${this.key}] Connected to ${this.ip}:${this.port}`);
-					this.emit(Events.CONNECTED, this.key);
+					this.emit('connected', this.key);
 					resolve(true);
 				});
 				this.socket.on('data', (data) => { this.handleData(data); });
 				this.socket.on('error', (error) => {
-					this.state = ConnectionState.ERROR;
-					this.emit(Events.ERROR, error);
+					this.state = 'error';
+					this.emit('error', error);
 					this.scheduleReconnect();
 					reject(error);
 				});
-				// 移除了 timeout 事件监听器
 				this.socket.on('close', (hadError) => {
 					this.handleDisconnect();
 				});
 				this.socket.connect(this.port, this.ip);
 			} catch (error) {
-				this.state = ConnectionState.ERROR;
+				this.state = 'error';
 				this.scheduleReconnect();
 				reject(error);
 			}
@@ -97,7 +75,7 @@ class PersistentJudgeClient extends EventEmitter {
 	 * 处理断开连接
 	 */
 	handleDisconnect() {
-		this.state = ConnectionState.DISCONNECTED;
+		this.state = 'disconnected';
 		this.cleanupSocket();
 
 		// 清理所有等待的响应
@@ -112,7 +90,7 @@ class PersistentJudgeClient extends EventEmitter {
 		}
 		this.waitingQueue = [];
 
-		this.emit(Events.DISCONNECTED, this.key);
+		this.emit('disconnected', this.key);
 		if (this.autoConnect) this.scheduleReconnect();
 	}
 
@@ -159,15 +137,15 @@ class PersistentJudgeClient extends EventEmitter {
 				const callback = this.responseCallbacks.get(firstKey);
 				this.responseCallbacks.delete(firstKey);
 
-				if (status === 'E') {
-					callback.reject(new Error(content));
-				} else {
+				//if (status === 'E') {
+				//	callback.reject(new Error(content));
+				//} else {
 					// 返回包含 status 和 content 的对象
 					callback.resolve({ status, content });
-				}
+				//}
 			} else {
 				// 如果没有回调，作为事件发出
-				this.emit(Events.MESSAGE, { status, content });
+				this.emit('message', { status, content });
 			}
 		}
 	}
@@ -176,12 +154,31 @@ class PersistentJudgeClient extends EventEmitter {
 	 * 获取连接锁（确保同一连接上不会同时处理多个请求组）
 	 */
 	async acquireLock() {
-		return new Promise((resolve) => {
+		return new Promise((resolve, reject) => {
 			if (!this.lock) {
 				this.lock = true;
 				resolve();
 			} else {
-				this.waitingQueue.push({ resolve });
+				// 加入等待队列
+				const timeoutId = setTimeout(() => {
+					// 从等待队列中移除自己
+					const index = this.waitingQueue.findIndex(item => item.reject === reject);
+					if (index !== -1) {
+						this.waitingQueue.splice(index, 1);
+					}
+					reject(new Error('Time out'));
+				}, 5000);
+
+				this.waitingQueue.push({
+					resolve: () => {
+						clearTimeout(timeoutId);
+						resolve();
+					},
+					reject: () => {
+						clearTimeout(timeoutId);
+						reject(new Error('Time out'));
+					}
+				});
 			}
 		});
 	}
@@ -199,51 +196,37 @@ class PersistentJudgeClient extends EventEmitter {
 	}
 
 	/**
-	 * 执行带锁的操作
-	 */
-	async executeWithLock(operation) {
-		await this.acquireLock();
-		try {
-			return await operation();
-		} finally {
-			this.releaseLock();
-		}
-	}
-
-	/**
 	 * 发送消息并等待响应
 	 * 返回一个包含 status 和 content 的对象
 	 */
 	async sendAndWait(command, data, timeout = 15000) {
-		return this.executeWithLock(async () => {
-			return new Promise((resolve, reject) => {
-				if (this.state !== ConnectionState.CONNECTED) {
-					reject(new Error('Not connected'));
-					return;
-				}
+		return new Promise((resolve, reject) => {
+			if (this.state !== 'connected') {
+				reject(new Error('Not connected'));
+				return;
+			}
 
-				const messageId = this.nextMessageId++;
-				const timer = setTimeout(() => {
-					this.responseCallbacks.delete(messageId);
-					reject(new Error('Request timeout'));
-				}, timeout);
+			const messageId = this.nextMessageId++;
+			const timer = setTimeout(() => {
+				this.responseCallbacks.delete(messageId);
+				reject(new Error('Request timeout'));
+			}, timeout);
 
-				this.responseCallbacks.set(messageId, {
-					resolve: (result) => {
-						clearTimeout(timer);
-						resolve(result);
-					},
-					reject: (error) => {
-						clearTimeout(timer);
-						reject(error);
-					}
-				});
-
-				this.sendRawMessage(command, data).catch(error => {
+			this.responseCallbacks.set(messageId, {
+				resolve: (result) => {
 					clearTimeout(timer);
-					this.responseCallbacks.delete(messageId);
+					resolve(result);
+				},
+				reject: (error) => {
+					clearTimeout(timer);
 					reject(error);
-				});
+				}
+			});
+
+			this.sendRawMessage(command, data).catch(error => {
+				clearTimeout(timer);
+				this.responseCallbacks.delete(messageId);
+				reject(error);
 			});
 		});
 	}
@@ -260,7 +243,7 @@ class PersistentJudgeClient extends EventEmitter {
 	 */
 	sendRawMessage(command, data) {
 		return new Promise((resolve, reject) => {
-			if (this.state !== ConnectionState.CONNECTED) {
+			if (this.state !== 'connected') {
 				reject(new Error('Not connected'));
 				return;
 			}
@@ -288,7 +271,7 @@ class PersistentJudgeClient extends EventEmitter {
 			this.reconnectTimer = null;
 		}
 		this.cleanupSocket();
-		this.state = ConnectionState.DISCONNECTED;
+		this.state = 'disconnected';
 	}
 
 	/**
@@ -304,15 +287,10 @@ class PersistentJudgeClient extends EventEmitter {
 	}
 
 	/**
-	 * 获取连接状态
-	 */
-	getState() { return this.state; }
-
-	/**
 	 * 是否已连接
 	 */
 	isConnected() {
-		return this.state === ConnectionState.CONNECTED;
+		return this.state === 'connected';
 	}
 }
 
@@ -340,7 +318,7 @@ class ConnectionManager {
 				'middle',
 				config.midip,
 				config.midporta,
-				ConnectionType.MIDDLE_ACCOUNT
+				'account'
 			);
 		}
 		if (config.midip && config.midportm) {
@@ -348,7 +326,7 @@ class ConnectionManager {
 				'middle',
 				config.midip,
 				config.midportm,
-				ConnectionType.MIDDLE_MSG
+				'msg'
 			);
 		}
 
@@ -360,7 +338,7 @@ class ConnectionManager {
 						server.id,
 						server.ip,
 						server.discPort,
-						ConnectionType.JUDGE_DISC
+						'disc'
 					);
 				}
 				if (server.judgePort) {
@@ -368,7 +346,7 @@ class ConnectionManager {
 						server.id,
 						server.ip,
 						server.judgePort,
-						ConnectionType.JUDGE_SUBMIT
+						'judge'
 					);
 				}
 				if (server.queryPort) {
@@ -376,7 +354,7 @@ class ConnectionManager {
 						server.id,
 						server.ip,
 						server.queryPort,
-						ConnectionType.JUDGE_QUERY
+						'query'
 					);
 				}
 			}
@@ -391,22 +369,14 @@ class ConnectionManager {
 	 * 创建并连接客户端
 	 */
 	async createAndConnectClient(serverId, ip, port, type) {
-		const key = `${type}_${serverId}_${port}`;
+		const key = `${serverId}_${port}`;
 		if (this.clients.has(key)) return this.clients.get(key);
 
-		const client = new PersistentJudgeClient(serverId, ip, port, type);
+		const client = new PersistentJudgeClient(serverId, ip, port);
 		this.clients.set(key, client);
 
-		client.on(Events.CONNECTED, (clientKey) => {
+		client.on('connected', (clientKey) => {
 			console.log(`Client ${clientKey} connected`);
-		});
-
-		client.on(Events.DISCONNECTED, (clientKey) => {
-			//console.warn(`Client ${clientKey} disconnected`);
-		});
-
-		client.on(Events.ERROR, (error) => {
-			//console.error(`Client ${key} error:`, error.message);
 		});
 
 		await client.connect().catch(() => { });
@@ -420,7 +390,7 @@ class ConnectionManager {
 		// 每分钟检查一次所有连接状态
 		setInterval(() => {
 			for (const [key, client] of this.clients.entries()) {
-				if (client.state === ConnectionState.DISCONNECTED && client.autoConnect) {
+				if (client.state === 'disconnected' && client.autoConnect) {
 					console.log(`[Monitor] ${key} is disconnected, attempting to reconnect...`);
 					client.connect().catch(() => {
 						// 重连失败，继续等待下次检查
@@ -433,8 +403,8 @@ class ConnectionManager {
 	/**
 	 * 获取客户端
 	 */
-	getClient(serverId, port, type) {
-		const key = `${type}_${serverId}_${port}`;
+	getClient(serverId, port) {
+		const key = `${serverId}_${port}`;
 		return this.clients.get(key);
 	}
 
@@ -442,10 +412,10 @@ class ConnectionManager {
 	 * 获取中间部分客户端
 	 */
 	getMiddleA() {
-		return this.getClient('middle', config.midporta, ConnectionType.MIDDLE_ACCOUNT);
+		return this.getClient('middle', config.midporta);
 	}
 	getMiddleM() {
-		return this.getClient('middle', config.midportm, ConnectionType.MIDDLE_MSG);
+		return this.getClient('middle', config.midportm);
 	}
 
 	/**
@@ -457,20 +427,20 @@ class ConnectionManager {
 
 		let port;
 		switch (type) {
-			case ConnectionType.JUDGE_DISC:
+			case 'disc':
 				port = server.discPort;
 				break;
-			case ConnectionType.JUDGE_SUBMIT:
+			case 'judge':
 				port = server.judgePort;
 				break;
-			case ConnectionType.JUDGE_QUERY:
+			case 'query':
 				port = server.queryPort;
 				break;
 			default:
 				throw new Error(`Unknown connection type: ${type}`);
 		}
 
-		return this.getClient(serverId, port, type);
+		return this.getClient(serverId, port);
 	}
 
 	/**
@@ -490,7 +460,6 @@ class ConnectionManager {
 		const sellected = availableServers[randomIndex];
 
 		return sellected.id;
-		//return this.getJudgeClient(sellected.id, type);
 	}
 
 	/**
@@ -505,29 +474,37 @@ class ConnectionManager {
 		this.clients.clear();
 		this.initialized = false;
 	}
-
-	/**
-	 * 获取所有连接状态
-	 */
-	getConnectionStatus() {
-		const status = [];
-		for (const [key, client] of this.clients.entries()) {
-			status.push({
-				key,
-				ip: client.ip,
-				port: client.port,
-				type: client.type,
-				state: client.getState(),
-				serverId: client.serverId,
-				connected: client.isConnected()
-			});
-		}
-		return status;
-	}
 }
+
 const connectionManager = new ConnectionManager();
+
 async function initializeConnections() {
 	await connectionManager.initialize();
+}
+
+function getuid(cookie) {
+	if (!cookie || cookie.length < 2) return null;
+	const lenChar = cookie[0];
+	const uidLength = parseInt(lenChar, 10);
+	if (isNaN(uidLength) || uidLength <= 0) return null;
+	if (cookie.length < 1 + uidLength) return null;
+	const uid = cookie.substring(1, 1 + uidLength);
+	return uid;
+}
+
+function buildid(serverid, value) {
+	const judgeIdHex = parseInt(serverid, 10).toString(16).padStart(2, '0');
+	const submissionIdHex = parseInt(value, 10).toString(16).padStart(6, '0');
+	return judgeIdHex.toUpperCase() + submissionIdHex.toUpperCase();
+}
+
+function parseid(fullId) {
+	if (fullId.length !== 8) throw new Error("Invalid id");
+	const hexRegex = /^[0-9a-fA-F]+$/;
+	if (!hexRegex.test(fullId)) throw new Error('Invalid id');
+	const serverid = parseInt(fullId.substring(0, 2), 16).toString(10);
+	const value = parseInt(fullId.substring(2), 16);
+	return { serverid, value };
 }
 
 /**
@@ -539,8 +516,13 @@ async function verify_cookie(cookie) {
 	const client = connectionManager.getMiddleA();
 	try {
 		if (!client || !client.isConnected()) throw new Error('Account server not connected');
-		const response = await client.sendAndWait('V', cookie);
-		return response.content;
+		await client.acquireLock();
+		try {
+			const response = await client.sendAndWait('V', cookie);
+			return response.content;
+		} finally {
+			client.releaseLock();
+		}
 	} catch (error) {
 		console.error('Failed to verify cookie:', error.message);
 		return "N";
@@ -557,23 +539,18 @@ async function login(username, password) {
 	const client = connectionManager.getMiddleA();
 	try {
 		if (!client || !client.isConnected()) throw new Error('Account server not connected');
-		await client.sendOnly('L', username);
-		const response = await client.sendAndWait('L', password);
-		return response.content;
+		await client.acquireLock();
+		try {
+			await client.sendOnly('L', username);
+			const response = await client.sendAndWait('L', password);
+			return response.content;
+		} finally {
+			client.releaseLock();
+		}
 	} catch (error) {
 		console.error('Failed to login:', error.message);
 		return error.message;
 	}
-}
-
-function getuid(cookie) {
-	if (!cookie || cookie.length < 2) return null;
-	const lenChar = cookie[0];
-	const uidLength = parseInt(lenChar, 10);
-	if (isNaN(uidLength) || uidLength <= 0) return null;
-	if (cookie.length < 1 + uidLength) return null;
-	const uid = cookie.substring(1, 1 + uidLength);
-	return uid;
 }
 
 /**
@@ -585,11 +562,16 @@ async function getinfoshort(cookie) {
 	const client = connectionManager.getMiddleA();
 	try {
 		if (!client || !client.isConnected()) throw new Error('Account server not connected');
-		let response = await client.sendAndWait('V', cookie);
-		if (response.content === "N") return `["N",${response.content}]`;
-		const uids = getuid(cookie);
-		response = await client.sendAndWait('Q', uids);
-		return `["Y",${response.content}]`;
+		await client.acquireLock();
+		try {
+			let response = await client.sendAndWait('V', cookie);
+			if (response.content === "N") return `["N",${response.content}]`;
+			const uids = getuid(cookie);
+			response = await client.sendAndWait('Q', uids);
+			return `["Y",${response.content}]`;
+		} finally {
+			client.releaseLock();
+		}
 	} catch (error) {
 		console.error('Failed to get account info:', error.message);
 		return `["N",${error.message}]`;
@@ -608,28 +590,21 @@ async function updinfo(cookie, username, password, publiccode) {
 	const client = connectionManager.getMiddleA();
 	try {
 		if (!client || !client.isConnected()) throw new Error('Account server not connected');
-		let response = await client.sendAndWait('C', cookie);
-		if (response.content === "N") return "N";
-		client.sendOnly('U', username);
-		client.sendOnly('P', password);
-		response = client.sendAndWait('C', publiccode);
-		return response;
+		await client.acquireLock();
+		try {
+			let response = await client.sendAndWait('C', cookie);
+			if (response.content === "N") return "N";
+			await client.sendOnly('U', username);
+			await client.sendOnly('P', password);
+			response = await client.sendAndWait('C', publiccode);
+			return response.content;
+		} finally {
+			client.releaseLock();
+		}
 	} catch (error) {
 		console.error('Failed to update account info:', error.message);
 		return "N";
 	}
-}
-
-function buildid(serverid, value) {
-	const judgeIdHex = parseInt(serverid, 10).toString(16).padStart(2, '0');
-	const submissionIdHex = parseInt(value, 10).toString(16).padStart(6, '0');
-	return judgeIdHex.toUpperCase() + submissionIdHex.toUpperCase();
-}
-
-function parseid(fullId) {
-	const serverid = parseInt(fullId.substring(0, 2), 16).toString(10);
-	const value = parseInt(fullId.substring(2), 16);
-	return { serverid, value };
 }
 
 /**
@@ -638,27 +613,40 @@ function parseid(fullId) {
  * @param {any} content
  * @returns {Array} ["Y"/"N", cid/error]
  */
-async function newdisc(cookie, content) {
+async function newdisc(cookie, content, title) {
 	let client = connectionManager.getMiddleA();
 	try {
 		if (!client || !client.isConnected()) throw new Error('Account server not connected');
-		const response = await client.sendAndWait('V', cookie);
-		if (response.content !== "Y") throw "IDK?";
+		await client.acquireLock();
+		try {
+			const response = await client.sendAndWait('V', cookie);
+			if (response.content !== "Y") throw "IDK?";
+		} finally {
+			client.releaseLock();
+		}
 	} catch (error) {
 		console.error('Failed to creatediscussion(cookie err):', error.message);
 		return `["N",${error.message}]`;
 	}
 	//passed cookie check
 	try {
-		const server = connectionManager.selectJudgeServerId(ConnectionType.JUDGE_DISC);
-		client = connectionManager.getJudgeClient(server, ConnectionType.JUDGE_DISC);
+		const server = connectionManager.selectJudgeServerId('disc');
+		client = connectionManager.getJudgeClient(server, 'disc');
 		if (!client || !client.isConnected()) throw new Error('Discussion server not connected');
-		const response = await client.sendAndWait('S', content);
-		if (response.status === "Y") {
-			const nid = buildid(server, response.content);
-			return `["Y",${nid}]`;
+		await client.acquireLock();
+		try {
+			await client.sendOnly('S', content);
+			await client.sendOnly('S', title);
+			const uids = getuid(cookie);
+			const response = await client.sendAndWait('S', uids);
+			if (response.status === "Y") {
+				const nid = buildid(server, response.content);
+				return `["Y",${nid}]`;
+			}
+			throw "IDK?";
+		} finally {
+			client.releaseLock();
 		}
-		throw "IDK?";
 	}
 	catch (error) {
 		console.error('Failed to creatediscussion:', error.message);
@@ -677,21 +665,32 @@ async function postdisc(cookie, cid, content) {
 	let client = connectionManager.getMiddleA();
 	try {
 		if (!client || !client.isConnected()) throw new Error('Account server not connected');
-		const response = await client.sendAndWait('V', cookie);
-		if (response.content !== "Y") throw "IDK?";
+		await client.acquireLock();
+		try {
+			const response = await client.sendAndWait('V', cookie);
+			if (response.content !== "Y") throw "IDK?";
+		} finally {
+			client.releaseLock();
+		}
 	} catch (error) {
 		console.error('Failed to postdiscussion(cookie err):', error.message);
 		return "N";
 	}
 	//passed cookie check
 	try {
-		const val = parseid(cid);
-		client = connectionManager.getJudgeClient(val.serverid, ConnectionType.JUDGE_DISC);
+		const val = parseid(cid), uids = getuid(cookie);
+		client = connectionManager.getJudgeClient(val.serverid, 'disc');
 		if (!client || !client.isConnected()) throw new Error('Discussion server not connected');
-		client.sendOnly('P', val.value.toString(10));
-		const response = await client.sendAndWait('S', content);
-		if (response.content === "Y") return "Y";
-		throw "IDK?";
+		await client.acquireLock();
+		try {
+			await client.sendOnly('P', val.value.toString(10));
+			await client.sendOnly('S', content);
+			const response = await client.sendAndWait('S', uids);
+			if (response.content === "Y") return "Y";
+			throw "IDK?";
+		} finally {
+			client.releaseLock();
+		}
 	}
 	catch (error) {
 		console.error('Failed to postdiscussion:', error.message);
@@ -710,8 +709,13 @@ async function getdisc(cookie, cid, page) {
 	let client = connectionManager.getMiddleA();
 	try {
 		if (!client || !client.isConnected()) throw new Error('Account server not connected');
-		const response = await client.sendAndWait('V', cookie);
-		if (response.content !== "Y") throw "IDK?";
+		await client.acquireLock();
+		try {
+			const response = await client.sendAndWait('V', cookie);
+			if (response.content !== "Y") throw "IDK?";
+		} finally {
+			client.releaseLock();
+		}
 	} catch (error) {
 		console.error('Failed to getdiscussion(cookie err):', error.message);
 		return `["N",${error.message}]`;
@@ -719,12 +723,17 @@ async function getdisc(cookie, cid, page) {
 	//passed cookie check
 	try {
 		const val = parseid(cid);
-		client = connectionManager.getJudgeClient(val.serverid, ConnectionType.JUDGE_DISC);
+		client = connectionManager.getJudgeClient(val.serverid, 'disc');
 		if (!client || !client.isConnected()) throw new Error('Discussion server not connected');
-		client.sendOnly('G', val.value.toString(10));
-		const response = await client.sendAndWait('S', page);
-		if (response.status === "Y") return `["Y",${response.content}]`;
-		throw "IDK?";
+		await client.acquireLock();
+		try {
+			await client.sendOnly('G', val.value.toString(10));
+			const response = await client.sendAndWait('S', page);
+			if (response.status === "Y") return `["Y",${response.content}]`;
+			throw "IDK?";
+		} finally {
+			client.releaseLock();
+		}
 	}
 	catch (error) {
 		console.error('Failed to getdiscussion:', error.message);
@@ -749,37 +758,52 @@ async function submit(cookie, pid, lan, code) {
 		lan !== "C++17" && lan !== "c++17" &&
 		lan !== "C++20" && lan !== "c++20"
 	) {
-		console.error('Failed to submit(unsupported language):', error.message);
-		return `["N",${error.message}]`;
+		console.error('Failed to submit(unsupported language)');
+		return `["N","unsupported language"]`;
 	}
 	const client1 = connectionManager.getMiddleA();
 	try {
 		if (!client1 || !client1.isConnected()) throw new Error('Account server not connected');
-		const response = await client1.sendAndWait('V', cookie);
-		if (response.content !== "Y") throw "IDK?";
+		await client1.acquireLock();
+		try {
+			const response = await client1.sendAndWait('V', cookie);
+			if (response.content !== "Y") throw "IDK?";
+		} finally {
+			client1.releaseLock();
+		}
 	} catch (error) {
 		console.error('Failed to submit(cookie err):', error.message);
 		return `["N",${error.message}]`;
 	}
 	//passed cookie check
 	try {
-		const server = connectionManager.selectJudgeServerId(ConnectionType.JUDGE_SUBMIT);
-		const client = connectionManager.getJudgeClient(server, ConnectionType.JUDGE_SUBMIT);
+		const server = connectionManager.selectJudgeServerId('judge');
+		const client = connectionManager.getJudgeClient(server, 'judge');
 		if (!client || !client.isConnected()) throw new Error('Judge server not connected');
-		const uids = getuid(cookie);
-		let response = await client.sendAndWait('S', uids);
-		if (response.status === "E") return `["N",${response.content}]`;
-		response = await client.sendAndWait('O', pid);
-		if (response.status === "E") return `["N",${response.content}]`;
-		response = await client.sendAndWait('O', lan);
-		if (response.status === "E") return `["N",${response.content}]`;
-		client.sendOnly('O', lan);
-		response = await sendAndWait('O', code);
-		if (response.status !== "O") throw response.content;
-		const nid = buildid(server, response.content);
-		client1.sendOnly('R', uids);
-		client1.sendOnly('R', nid);
-		return `["Y",${nid}]`;
+		await client.acquireLock();
+		try {
+			const uids = getuid(cookie);
+			let response = await client.sendAndWait('S', uids);
+			if (response.status === "E") return `["N",${response.content}]`;
+			response = await client.sendAndWait('O', pid);
+			if (response.status === "E") return `["N",${response.content}]`;
+			await client.sendOnly('O', lan);
+			response = await client.sendAndWait('F', code);
+			if (response.status !== "O") throw response.content;
+			const nid = buildid(server, response.content);
+
+			// 对account server加锁
+			await client1.acquireLock();
+			try {
+				await client1.sendOnly('R', uids);
+				await client1.sendOnly('R', nid);
+			} finally {
+				client1.releaseLock();
+			}
+			return `["Y","${nid}"]`;
+		} finally {
+			client.releaseLock();
+		}
 	}
 	catch (error) {
 		console.error('Failed to submit:', error.message);
@@ -797,8 +821,13 @@ async function getrecord(cookie, rid) {
 	const client1 = connectionManager.getMiddleA();
 	try {
 		if (!client1 || !client1.isConnected()) throw new Error('Account server not connected');
-		const response = await client1.sendAndWait('V', cookie);
-		if (response.content !== "Y") throw "IDK?";
+		await client1.acquireLock();
+		try {
+			const response = await client1.sendAndWait('V', cookie);
+			if (response.content !== "Y") throw "IDK?";
+		} finally {
+			client1.releaseLock();
+		}
 	} catch (error) {
 		console.error('Failed to get record(cookie err):', error.message);
 		return `["N",${error.message}]`;
@@ -806,25 +835,38 @@ async function getrecord(cookie, rid) {
 	//passed cookie check
 	try {
 		const val = parseid(rid);
-		const client = connectionManager.getJudgeClient(val.serverid, ConnectionType.JUDGE_QUERY);
+		const client = connectionManager.getJudgeClient(val.serverid, 'query');
 		if (!client || !client.isConnected()) throw new Error('Judge server not connected');
-		let response = await client.sendAndWait('R', val.value.toString(10));
-		if (response.status === "E") {
-			//just informs that this record file doesn't currently exists
-			//try to fetch short result instead
-			response = await client.sendAndWait('Q', val.value.toString(10));
-			const res = JSON.parse(response.content)
-			if (res.pts < 0) throw new Error('Bad record ID');
-			else return `["P",${response.content}]`;
+		await client.acquireLock();
+		try {
+			let response = await client.sendAndWait('R', val.value.toString(10));
+			if (response.status === "E") {
+				//just informs that this record file doesn't currently exists
+				//try to fetch short result instead
+				response = await client.sendAndWait('Q', val.value.toString(10));
+				const res = JSON.parse(response.content)
+				if (res.pts < 0) throw new Error('Bad record ID');
+				else return `["P",${response.content}]`;
+			}
+			const reslt = response.content;
+			const uid = JSON.parse(reslt).uid.toString();
+
+			// 对account server加锁
+			await client1.acquireLock();
+			try {
+				await client1.sendOnly('A', cookie);
+				response = await client1.sendAndWait('A', uid);
+				if (response.status !== "O") return `["Y",${reslt},"//You're not allowed to view this code!!!"]`;
+			} finally {
+				client1.releaseLock();
+			}
+
+			response = await client.sendAndWait('C', val.value.toString(10));
+			const obj = ["Y", reslt, response.content];
+			return JSON.stringify(obj, null, 2);
+		} finally {
+			client.releaseLock();
 		}
-		const reslt = response.content;
-		const uid = JSON.parse(reslt).uid.toString();
-		client1.sendOnly('A', cookie);
-		response = await client1.sendAndWait('A', uid);
-		if (response.status !== "O") return `["Y",${reslt},"//You're not allowed to view this code!!!"]`;
-		response = await client.sendAndWait('C', val.value.toString(10));
-		const obj = ["Y", reslt, response.content];
-		return JSON.stringify(obj, null, 2);
 	}
 	catch (error) {
 		console.error('Failed to get record:', error.message);
@@ -842,13 +884,18 @@ async function getrecordlist(cookie, page) {
 	const client1 = connectionManager.getMiddleA();
 	try {
 		if (!client1 || !client1.isConnected()) throw new Error('Account server not connected');
-		let response = await client1.sendAndWait('V', cookie);
-		if (response.content !== "Y") throw "IDK?";
-		const uids = getuid(cookie);
-		client1.sendOnly('G', uids);
-		response = await client1.sendAndWait('G', page);
-		if (response.status === "O") return `["Y",${response.content}]`;
-		else return `["N",${response.content}]`;
+		await client1.acquireLock();
+		try {
+			let response = await client1.sendAndWait('V', cookie);
+			if (response.content !== "Y") throw "IDK?";
+			const uids = getuid(cookie);
+			await client1.sendOnly('G', uids);
+			response = await client1.sendAndWait('G', page);
+			if (response.status === "O") return `["Y",${response.content}]`;
+			else return `["N",${response.content}]`;
+		} finally {
+			client1.releaseLock();
+		}
 	} catch (error) {
 		console.error('Failed to get record:', error.message);
 		return `["N",${error.message}]`;
@@ -868,14 +915,25 @@ async function postmsg(cookie, target, content) {
 	try {
 		if (!client1 || !client1.isConnected()) throw new Error('Account server not connected');
 		if (!client || !client.isConnected()) throw new Error('Message server not connected');
-		let response = await client1.sendAndWait('V', cookie);
-		if (response.content !== "Y") throw "IDK?";
-		const uids = getuid(cookie);
-		client.sendOnly('R', uids);
-		client.sendOnly('R', content);
-		response = await client.sendAndWait('R', target);
-		if (response.status === "O") return "Y";
-		else return "N";
+		await client1.acquireLock();
+		try {
+			let response = await client1.sendAndWait('V', cookie);
+			if (response.content !== "Y") throw "IDK?";
+		} finally {
+			client1.releaseLock();
+		}
+
+		await client.acquireLock();
+		try {
+			const uids = getuid(cookie);
+			await client.sendOnly('R', uids);
+			await client.sendOnly('R', content);
+			const response = await client.sendAndWait('R', target);
+			if (response.status === "O") return "Y";
+			else return "N";
+		} finally {
+			client.releaseLock();
+		}
 	}
 	catch (error) {
 		console.error('Failed to get post message:', error.message);
@@ -895,13 +953,24 @@ async function getmsg(cookie, page) {
 	try {
 		if (!client1 || !client1.isConnected()) throw new Error('Account server not connected');
 		if (!client || !client.isConnected()) throw new Error('Message server not connected');
-		let response = await client1.sendAndWait('V', cookie);
-		if (response.content !== "Y") throw "IDK?";
-		const uids = getuid(cookie);
-		client.sendOnly('G', uids);
-		response = await client.sendAndWait('G', page);
-		if (response.status === "O") return `["Y",${response.content}]`;
-		else return `["N",${response.content}]`;
+		await client1.acquireLock();
+		try {
+			let response = await client1.sendAndWait('V', cookie);
+			if (response.content !== "Y") throw "IDK?";
+		} finally {
+			client1.releaseLock();
+		}
+
+		await client.acquireLock();
+		try {
+			const uids = getuid(cookie);
+			await client.sendOnly('G', uids);
+			response = await client.sendAndWait('G', page);
+			if (response.status === "O") return `["Y",${response.content}]`;
+			else return `["N",${response.content}]`;
+		} finally {
+			client.releaseLock();
+		}
 	}
 	catch (error) {
 		console.error('Failed to get post message:', error.message);
@@ -910,12 +979,17 @@ async function getmsg(cookie, page) {
 }
 
 async function updproblemlist() {
-	const server = connectionManager.selectJudgeServerId(ConnectionType.JUDGE_SUBMIT);
-	const client = connectionManager.getJudgeClient(server, ConnectionType.JUDGE_SUBMIT);
+	const server = connectionManager.selectJudgeServerId('judge');
+	const client = connectionManager.getJudgeClient(server, 'judge');
 	try {
 		if (!client || !client.isConnected()) throw new Error('Problem server not connected');
-		const ret = await client.sendAndWait('V', config.verinfo);
-		return ret.content;
+		await client.acquireLock();
+		try {
+			const ret = await client.sendAndWait('V', config.verinfo);
+			return ret.content;
+		} finally {
+			client.releaseLock();
+		}
 	}
 	catch (error) {
 		console.error('Failed to update problem list:', error.message);
@@ -924,12 +998,6 @@ async function updproblemlist() {
 }
 
 module.exports = {
-	PersistentJudgeClient,
-	ConnectionManager,
-	ConnectionState,
-	ConnectionType,
-	Events,
-	connectionManager,
 	initializeConnections,
 
 	//API functions
@@ -956,15 +1024,5 @@ module.exports = {
 	getmsg,
 
 	//problem list
-	updproblemlist,
-
-	//meaningless(?) preserved
-	getJudgeServerConfig: (judgeId) => {
-		const server = config.judgeServerMap[judgeId];
-		if (!server) {
-			throw new Error(`Judge server ${judgeId} not found`);
-		}
-		return server;
-	},
-	JudgeClient: PersistentJudgeClient
+	updproblemlist
 };
