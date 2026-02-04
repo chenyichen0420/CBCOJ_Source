@@ -116,11 +116,10 @@ Returns:
 ### Submit Code
 ```
 POST /submit
-Parameters:
+Request Body:
   cookie (string) - Cookie value
   pid (string) - Problem ID
   lan (string) - Programming language
-Request Body:
   code (string) - Code content
 Returns:
   ["Y", rid] - Success, returns Record ID
