@@ -81,7 +81,7 @@ Parameters:
   cid (string) - Discussion ID
   page (num) - Page number
 Returns:
-  ["Y", [{"uid": num, "msg": string}, ...]] - Success, returns Discussion list. The first element is the title and author of this Discussion.
+  ["Y", [{"uid": num, "msg": string}, ...], discussion page count] - Success, returns Discussion list and total discussion pages. The first element is the title and author of this Discussion.
   ["N", error] - Failure, returns error message
 ```
 
@@ -107,7 +107,7 @@ Parameters:
   target (string) - Target user/filter condition
   page (num) - Page number
 Returns:
-  ["Y", [rid list]] - Success, returns Record ID list
+  ["Y", [rid list], record page count] - Success, returns Record ID list and total record pages
   ["N", error] - Failure, returns error message
 ```
 
@@ -148,7 +148,7 @@ Parameters:
   cookie (string) - Cookie value
   page (num) - Page number
 Returns:
-  ["Y", [{"uid": num, "msg": string}, ...]] - Success, returns Message list
+  ["Y", [{"uid": num, "msg": string}, ...], message page count] - Success, returns Message list and total message pages
   ["N", error] - Failure, returns error message
 ```
 
@@ -188,8 +188,8 @@ GET /getproblemlist
 Parameters:
   page (num) - Page number
 Returns:
-  [pid list] - Success, returns Pid list
-  Fall back to text/plain(status code 500) if critical Failure.
+  ["Y",[pid list],problem count] - Success, returns Pid list and total problem count.
+  ["N",error msg] - Failure, returns error message.
 ```
 
 ---
