@@ -29,7 +29,7 @@ Returns:
 ```
 GET /getinfoshort
 Parameters:
-  key (string) - Key value, either uid or cookie.
+  key (string) - Key value, uid, username or cookie.
 Returns:
   ["Y", [uid, username, publiccode]] - Success
   ["N", error] - Failure
