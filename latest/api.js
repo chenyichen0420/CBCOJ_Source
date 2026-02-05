@@ -50,9 +50,9 @@ async function verify_cookie(parsed_url, res) {
 }
 async function getinfoshort(parsed_url, res) {
 	try {
-		if (losepar('cookie', parsed_url.query, res)) return;
-		const cookie = parsed_url.query.cookie;
-		ret = await webcon.getinfoshort(cookie);
+		if (losepar('key', parsed_url.query, res)) return;
+		const key = parsed_url.query.key;
+		ret = await webcon.getinfoshort(key);
 		res.writeHead(200, {
 			'Content-Type': 'application/json',
 			'Access-Control-Allow-Origin': '*'
@@ -73,12 +73,20 @@ async function updinfo(parsed_url, res) {
 		const usrname = parsed_url.query.usrname;
 		const paswd = parsed_url.query.paswd;
 		const pubcode = parsed_url.query.pubcode;
+		if (pubcode !== 'yes' && pubcode !== 'no') {
+			res.writeHead(200, {
+				'Content-Type': 'text/plain',
+				'Access-Control-Allow-Origin': '*'
+			});
+			res.end("N");
+			return;
+		}
 		ret = await webcon.updinfo(cookie, usrname, paswd, pubcode);
 		res.writeHead(200, {
 			'Content-Type': 'text/plain',
 			'Access-Control-Allow-Origin': '*'
 		});
-		res.end(ret.content);
+		res.end(ret);
 	}
 	catch (error) {
 		handle_api_err(res, 'Failed to update info', error);
@@ -185,7 +193,7 @@ async function getrecordlist(parsed_url, res) {
 		if (losepar('page', parsed_url.query, res)) return;
 		const cookie = parsed_url.query.cookie;
 		const page = parsed_url.query.page;
-		ret = await webcon.getrecord(cookie, page);
+		ret = await webcon.getrecordlist(cookie, page);
 		res.writeHead(200, {
 			'Content-Type': 'application/json',
 			'Access-Control-Allow-Origin': '*'
@@ -256,15 +264,17 @@ async function getproblemlist(parsed_url, res) {
 	try {
 		if (losepar('page', parsed_url.query, res)) return;
 		const page = parsed_url.query.page;
-		const result = problemlist.slice((page - 1) * 10, page * 10);
+		let result = problemlist.slice((page - 1) * 10, page * 10);
+		result = JSON.stringify(result);
 		res.writeHead(200, {
 			'Content-Type': 'application/json',
 			'Access-Control-Allow-Origin': '*'
 		});
-		res.end(JSON.stringify(result));
+		res.end(`["Y",${result},${problemlist.length}]`);
 	}
 	catch (error) {
-		handle_api_err(res, 'Failed to get problem list', error);
+		res.end(`["N","Failed to get problem list"]`);
+		//handle_api_err(res, 'Failed to get problem list', error);
 	}
 }
 async function updproblemlist() {

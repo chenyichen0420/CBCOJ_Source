@@ -11,7 +11,7 @@ async function periodic_tasks() {
 		await api.updproblemlist();
 	}
 	catch (error) {
-		
+
 	}
 	//console.log(`periodic tasks runned`)
 }
@@ -42,7 +42,7 @@ const server = http.createServer((req, res) => {
 		handle_api(req, res);
 		return;
 	}
-	
+
 	res.writeHead(400, {
 		'Content-Type': 'text/plain',
 		'Access-Control-Allow-Origin': '*'
@@ -59,12 +59,12 @@ function method_not_allowed(res) {
 	res.end('Forbidden: Request method not allowed');
 }
 async function handle_api(req, res) {
-	if(req.method === 'OPTIONS') {
+	if (req.method === 'OPTIONS') {
 		res.writeHead(200, {
 			'Content-Type': 'text/plain',
 			'Access-Control-Allow-Origin': '*',
-			'Access-Control-Allow-Methods':'*',
-			'Access-Control-Allow-Headers':'*'
+			'Access-Control-Allow-Methods': '*',
+			'Access-Control-Allow-Headers': '*'
 		});
 		res.end()
 		return;
@@ -164,6 +164,5 @@ server.listen(config.port, () => {
 	config.judgeServers.forEach(server => {
 		console.log(`	${server.id}: ${server.name} (${server.ip})`);
 	});
-	wait(3000);
 	periodic_tasks();
 });
