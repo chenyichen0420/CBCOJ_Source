@@ -52,7 +52,7 @@ async function getinfoshort(parsed_url, res) {
 	try {
 		if (losepar('key', parsed_url.query, res)) return;
 		const key = parsed_url.query.key;
-		ret = await webcon.getinfoshort(key);
+		const ret = await webcon.getinfoshort(key);
 		res.writeHead(200, {
 			'Content-Type': 'application/json',
 			'Access-Control-Allow-Origin': '*'
@@ -98,9 +98,25 @@ async function newdisc(parsed_url, res) {
 		if (losepar('content', parsed_url.query, res)) return;
 		if (losepar('title', parsed_url.query, res)) return;
 		const cookie = parsed_url.query.cookie;
-		const content = parsed_url.query.content;
-		const title = parsed_url.query.title;
-		ret = await webcon.newdisc(cookie, content, title);
+		const content = encodeURIComponent(parsed_url.query.content);
+		const title = encodeURIComponent(parsed_url.query.title);
+		if (title.length > 25) {
+			res.writeHead(200, {
+				'Content-Type': 'application/json',
+				'Access-Control-Allow-Origin': '*'
+			});
+			res.end(`["N","Title too long"]`);
+			return;
+		}
+		if (content.length > 380) {
+			res.writeHead(200, {
+				'Content-Type': 'application/json',
+				'Access-Control-Allow-Origin': '*'
+			});
+			res.end(`["N","Content too long"]`);
+			return;
+		}
+		const ret = await webcon.newdisc(cookie, content, title);
 		res.writeHead(200, {
 			'Content-Type': 'application/json',
 			'Access-Control-Allow-Origin': '*'
@@ -118,8 +134,16 @@ async function postdisc(parsed_url, res) {
 		if (losepar('content', parsed_url.query, res)) return;
 		const cookie = parsed_url.query.cookie;
 		const cid = parsed_url.query.cid;
-		const content = parsed_url.query.content;
-		ret = await webcon.postdisc(cookie, cid, content);
+		const content = encodeURIComponent(parsed_url.query.content);
+		if (content.length > 380) {
+			res.writeHead(200, {
+				'Content-Type': 'text/plain',
+				'Access-Control-Allow-Origin': '*'
+			});
+			res.end("N");
+			return;
+		}
+		const ret = await webcon.postdisc(cookie, cid, content);
 		res.writeHead(200, {
 			'Content-Type': 'text/plain',
 			'Access-Control-Allow-Origin': '*'
@@ -138,7 +162,7 @@ async function getdisc(parsed_url, res) {
 		const cookie = parsed_url.query.cookie;
 		const cid = parsed_url.query.cid;
 		const page = parsed_url.query.page;
-		ret = await webcon.getdisc(cookie, cid, page);
+		const ret = await webcon.getdisc(cookie, cid, page);
 		res.writeHead(200, {
 			'Content-Type': 'application/json',
 			'Access-Control-Allow-Origin': '*'
@@ -146,7 +170,20 @@ async function getdisc(parsed_url, res) {
 		res.end(ret);
 	}
 	catch (error) {
-		handle_api_err(res, 'Failed to getdiscussion', error);
+		handle_api_err(res, 'Failed to get discussion', error);
+	}
+}
+async function getdisclist(parsed_url, res) {
+	try {
+		const ret = webcon.getdisclist();
+		res.writeHead(200, {
+			'Content-Type': 'application/json',
+			'Access-Control-Allow-Origin': '*'
+		});
+		res.end(ret);
+	}
+	catch (error) {
+		handle_api_err(res, 'Failed to get discussion list', error);
 	}
 }
 async function submit(body, res) {
@@ -211,7 +248,15 @@ async function postmsg(parsed_url, res) {
 		if (losepar('content', parsed_url.query, res)) return;
 		const cookie = parsed_url.query.cookie;
 		const target = parsed_url.query.target;
-		const content = parsed_url.query.content;
+		const content = encodeURIComponent(parsed_url.query.content);
+		if (content.length > 80) {
+			res.writeHead(200, {
+				'Content-Type': 'text/plain',
+				'Access-Control-Allow-Origin': '*'
+			});
+			res.end("N");
+			return;
+		}
 		ret = await webcon.postmsg(cookie, target, content);
 		res.writeHead(200, {
 			'Content-Type': 'text/plain',
@@ -300,6 +345,7 @@ module.exports = {
 	newdisc,
 	postdisc,
 	getdisc,
+	getdisclist,
 
 	submit,
 

@@ -46,6 +46,11 @@ class PersistentJudgeClient extends EventEmitter {
 		// 用于跟踪异步响应
 		this.responseCallbacks = new Map(); // messageId -> {resolve, reject}
 		this.nextMessageId = 1;
+
+		// 新增：外部连接锁（用于手动控制连接独占）
+		this._externalLock = false; // 锁状态
+		this._externalLockQueue = []; // 等待队列
+		this._externalLockHolder = null; // 锁持有者标识
 	}
 
 	/**
@@ -313,6 +318,57 @@ class PersistentJudgeClient extends EventEmitter {
 	 */
 	isConnected() {
 		return this.state === ConnectionState.CONNECTED;
+	}
+
+	async lock(timeout = 1000) {
+		if (this._externalLock) {
+			// 锁已被持有，尝试等待
+			return new Promise((resolve) => {
+				const timer = setTimeout(() => {
+					// 从等待队列中移除
+					const index = this._externalLockQueue.findIndex(item => item.resolve === resolve);
+					if (index !== -1) {
+						this._externalLockQueue.splice(index, 1);
+					}
+					resolve(false); // 超时返回失败
+				}, timeout);
+
+				this._externalLockQueue.push({
+					resolve: (result) => {
+						clearTimeout(timer);
+						resolve(result);
+					}
+				});
+			});
+		} else {
+			// 直接获取锁
+			this._externalLock = true;
+			this._externalLockHolder = Date.now(); // 记录锁持有时间
+			return true;
+		}
+	}
+
+	/**
+	 * 释放连接锁
+	 * @returns {boolean} 是否成功释放锁
+	 */
+	unlock() {
+		if (!this._externalLock) {
+			return false; // 当前没有锁可释放
+		}
+
+		this._externalLock = false;
+		this._externalLockHolder = null;
+
+		// 通知等待队列中的下一个等待者
+		if (this._externalLockQueue.length > 0) {
+			const next = this._externalLockQueue.shift();
+			this._externalLock = true;
+			this._externalLockHolder = Date.now();
+			next.resolve(true);
+		}
+
+		return true;
 	}
 }
 
@@ -609,8 +665,8 @@ async function updinfo(cookie, username, password, publiccode) {
 		if (!client || !client.isConnected()) throw new Error('Account server not connected');
 		let response = await client.sendAndWait('C', cookie);
 		if (response.content === "N") return "N";
-		client.sendOnly('U', username);
-		client.sendOnly('P', password);
+		await client.sendOnly('U', username);
+		await client.sendOnly('P', password);
 		response = await client.sendAndWait('C', publiccode);
 		return response.content;
 	} catch (error) {
@@ -653,12 +709,14 @@ async function newdisc(cookie, content, title) {
 		const server = connectionManager.selectJudgeServerId(ConnectionType.JUDGE_DISC);
 		client = connectionManager.getJudgeClient(server, ConnectionType.JUDGE_DISC);
 		if (!client || !client.isConnected()) throw new Error('Discussion server not connected');
-		client.sendOnly('S', content);
-		client.sendOnly('S', title);
+		await client.sendOnly('S', content);
+		await client.sendOnly('S', title);
 		const uids = getuid(cookie);
 		const response = await client.sendAndWait('S', uids);
 		if (response.status === "Y") {
 			const nid = buildid(server, response.content);
+			client = connectionManager.getMiddleM();
+			await client.sendOnly('N', nid);
 			return `["Y","${nid}"]`;
 		}
 		throw "IDK?";
@@ -691,8 +749,8 @@ async function postdisc(cookie, cid, content) {
 		const val = parseid(cid), uids = getuid(cookie);
 		client = connectionManager.getJudgeClient(val.serverid, ConnectionType.JUDGE_DISC);
 		if (!client || !client.isConnected()) throw new Error('Discussion server not connected');
-		client.sendOnly('P', val.value.toString(10));
-		client.sendOnly('P', content);
+		await client.sendOnly('P', val.value.toString(10));
+		await client.sendOnly('P', content);
 		const response = await client.sendAndWait('P', uids);
 		if (response.content === "Y") return "Y";
 		throw "IDK?";
@@ -725,13 +783,29 @@ async function getdisc(cookie, cid, page) {
 		const val = parseid(cid);
 		client = connectionManager.getJudgeClient(val.serverid, ConnectionType.JUDGE_DISC);
 		if (!client || !client.isConnected()) throw new Error('Discussion server not connected');
-		client.sendOnly('G', val.value.toString(10));
+		await client.sendOnly('G', val.value.toString(10));
 		const response = await client.sendAndWait('S', page);
 		if (response.status === "Y") return `["Y",${response.content}]`;
 		else throw new Error(response.content);
 	}
 	catch (error) {
-		console.error('Failed to getdiscussion:', error.message);
+		console.error('Failed to get discussion:', error.message);
+		return `["N","${error.message}"]`;
+	}
+}
+
+/**
+ * 
+ * @returns
+ */
+async function getdisclist() {
+	let client = connectionManager.getMiddleM();
+	try {
+		const resp = client.sendAndWait('C', " ");
+		return `["Y",${resp.content}]`;
+	}
+	catch (error) {
+		console.error('Failed to get discussion list:', error.message);
 		return `["N","${error.message}"]`;
 	}
 }
@@ -775,11 +849,11 @@ async function submit(cookie, pid, lan, code) {
 		if (response.status === "E") return `["N","${response.content}"]`;
 		response = await client.sendAndWait('O', pid);
 		if (response.status === "E") return `["N","${response.content}"]`;
-		client.sendOnly('O', lan);
+		await client.sendOnly('O', lan);
 		response = await client.sendAndWait('O', code);
 		if (response.status !== "O") throw response.content;
 		const nid = buildid(server, response.content);
-		client1.sendOnly('R', uids);
+		await client1.sendOnly('R', uids);
 		await client1.sendAndWait('R', nid);
 		return `["Y","${nid}"]`;
 	}
@@ -822,7 +896,7 @@ async function getrecord(cookie, rid) {
 		}
 		const reslt = response.content;
 		const uid = JSON.parse(reslt).uid.toString();
-		client1.sendOnly('A', cookie);
+		await client1.sendOnly('A', cookie);
 		response = await client1.sendAndWait('A', uid);
 		if (response.status !== "O") return `["Y",${reslt},"//You're not allowed to view this code!!!"]`;
 		response = await client.sendAndWait('C', val.value.toString(10));
@@ -848,7 +922,7 @@ async function getrecordlist(cookie, page) {
 		let response = await client1.sendAndWait('V', cookie);
 		if (response.content !== "Y") throw "IDK?";
 		const uids = getuid(cookie);
-		client1.sendOnly('G', uids);
+		await client1.sendOnly('G', uids);
 		response = await client1.sendAndWait('G', page);
 		if (response.status === "O") return `["Y",${response.content}]`;
 		else return `["N","${response.content}"]`;
@@ -874,8 +948,8 @@ async function postmsg(cookie, target, content) {
 		let response = await client1.sendAndWait('V', cookie);
 		if (response.content !== "Y") throw "IDK?";
 		const uids = getuid(cookie);
-		client.sendOnly('R', uids);
-		client.sendOnly('R', content);
+		await client.sendOnly('R', uids);
+		await client.sendOnly('R', content);
 		response = await client.sendAndWait('R', target);
 		if (response.status === "O") return "Y";
 		else return "N";
@@ -901,7 +975,7 @@ async function getmsg(cookie, page) {
 		let response = await client1.sendAndWait('V', cookie);
 		if (response.content !== "Y") throw "IDK?";
 		const uids = getuid(cookie);
-		client.sendOnly('G', uids);
+		await client.sendOnly('G', uids);
 		response = await client.sendAndWait('G', page);
 		if (response.status === "O") return `["Y",${response.content}]`;
 		else return `["N","${response.content}"]`;
@@ -946,6 +1020,7 @@ module.exports = {
 	newdisc,
 	postdisc,
 	getdisc,
+	getdisclist,
 
 	//submit
 	submit,

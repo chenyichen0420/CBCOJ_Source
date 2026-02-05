@@ -99,6 +99,11 @@ async function handle_api(req, res) {
 		if (req.method === 'GET')
 			api.getdisc(parsed_url, res);
 		else method_not_allowed(res);
+	else if (parsed_url.pathname === '/api/getdisclist')
+		if (req.method === 'GET')
+			api.getdisclist(parsed_url, res);
+		else method_not_allowed(res);
+
 
 	else if (parsed_url.pathname === '/api/record')
 		if (req.method === 'GET')
