@@ -81,8 +81,18 @@ Parameters:
   cid (string) - Discussion ID
   page (num) - Page number
 Returns:
-  ["Y", [{"uid": num, "msg": string}, ...], discussion page count] - Success, returns Discussion list and total discussion pages. The first element is the title and author of this Discussion.
+  ["Y", [{"uid": num, "msg": string}, ...], discussion page count] - Success, returns Discussion list and total discussion pages. The first element is the title and author of this Discussion
   ["N", error] - Failure, returns error message
+```
+
+### Get Recent Discussion List
+```
+GET /getdisclist
+Parameters:
+	nothing
+Returns:
+	["Y", [cid list]] - Success, returns a list of cid list
+	["N", error] - Failure, returns error message
 ```
 
 ## Record Management
