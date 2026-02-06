@@ -12,6 +12,9 @@ GET /genregtoken
 Returns:
   ["Y",token] - Success, returns register token.
   ["N",error] - Failure, returns error message.
+Warning:
+	All token will be disabled every 5 min.
+	Eg. If you get an register token at 12:54:59, then it will be disabled in 1 second.
 ```
 
 ### Verify Activate Code
