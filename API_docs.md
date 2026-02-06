@@ -2,6 +2,30 @@ Currently, all sources are just "frontend" sources, providing basic API services
 
 Bellow is the format of all APIs supported:
 
+## Registeration(Unsupported)
+
+### Generate Register Token
+```
+GET /genregtoken
+  usrname (string) - Username
+  paswd (string) - Password
+Returns:
+  ["Y",token] - Success, returns register token.
+  ["N",error] - Failure, returns error message.
+```
+
+### Verify Activate Code
+```
+GET /verifycode
+  token (string) - Register Token
+  code (string) - Register Code
+Returns:
+  "Y" - Success
+  "N" - Failure
+Warning:
+  Once failed, the token will be unavailable to register.
+```
+
 ## Authentication
 
 ### Verify Cookie
