@@ -3,6 +3,7 @@ const path = require('path');
 
 let curdir = __dirname;
 let pat = path.join(curdir, 'config.json');
+let pat2 = path.join(curdir, 'lgcfg.json');
 let problempath = path.join(curdir, 'problem');
 const isBun = typeof Bun !== 'undefined';
 if (isBun) {
@@ -13,11 +14,16 @@ if (isBun) {
 
 const data = fs.readFileSync(pat);
 const pardata = JSON.parse(data);
+const data2 = fs.readFileSync(pat2);
+const pardata2 = JSON.parse(data2);
 const port = pardata.port;
 const midport = pardata.midport;
 const midporta = pardata.midporta;
 const midportm = pardata.midportm;
 const midip = pardata.midip;
+const preasure = pardata.preasure || false;
+const lguid = pardata2.lguid || "0";
+const lgcookie = pardata2.lgcookie || "0";
 
 const judgeServers = pardata.judger || [];
 const judgeServerMap = {};
@@ -35,6 +41,9 @@ module.exports = {
     judgeServerMap,
     problempath,
     verinfo: "7.41.114",
+    preasure,
+    lguid,
+    lgcookie,
 
     SN_IQ: 'I', // in queue
     SN_CJ: 'J', // currently judging

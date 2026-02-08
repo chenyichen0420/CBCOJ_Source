@@ -175,7 +175,7 @@ async function getdisc(parsed_url, res) {
 }
 async function getdisclist(parsed_url, res) {
 	try {
-		const ret = webcon.getdisclist();
+		const ret = await webcon.getdisclist();
 		res.writeHead(200, {
 			'Content-Type': 'application/json',
 			'Access-Control-Allow-Origin': '*'
@@ -290,7 +290,14 @@ async function getproblem(parsed_url, res) {
 		if (losepar('pid', parsed_url.query, res)) return;
 		const file = `${parsed_url.query.pid}.json`;
 		fs.readFile(path.join(config.problempath, file), 'utf8', (err, data) => {
-			if (err) throw new Error(err);
+			if (err) {
+				res.writeHead(200, {
+					'Content-Type': 'text/plain',
+					'Access-Control-Allow-Origin': '*'
+				});
+				res.end("Problem not found");
+				return;
+			}
 			res.writeHead(200, {
 				'Content-Type': 'application/json',
 				'Access-Control-Allow-Origin': '*'

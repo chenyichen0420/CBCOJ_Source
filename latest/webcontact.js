@@ -717,6 +717,8 @@ async function newdisc(cookie, content, title) {
 			const nid = buildid(server, response.content);
 			client = connectionManager.getMiddleM();
 			await client.sendOnly('N', nid);
+			await client.sendOnly('N', title);
+			await client.sendOnly('N', content);
 			return `["Y","${nid}"]`;
 		}
 		throw "IDK?";
@@ -801,8 +803,8 @@ async function getdisc(cookie, cid, page) {
 async function getdisclist() {
 	let client = connectionManager.getMiddleM();
 	try {
-		const resp = client.sendAndWait('C', " ");
-		return `["Y",${resp.content}]`;
+		const response = await client.sendAndWait('C', " ");
+		return `["Y",${response.content}]`;
 	}
 	catch (error) {
 		console.error('Failed to get discussion list:', error.message);
@@ -898,7 +900,10 @@ async function getrecord(cookie, rid) {
 		const uid = JSON.parse(reslt).uid.toString();
 		await client1.sendOnly('A', cookie);
 		response = await client1.sendAndWait('A', uid);
-		if (response.status !== "O") return `["Y",${reslt},"//You're not allowed to view this code!!!"]`;
+		if (response.status !== "O") {
+			const obj = ["Y", reslt, "//You're not allowed to view this code!!!"];
+			return JSON.stringify(obj, null, 2);
+		}
 		response = await client.sendAndWait('C', val.value.toString(10));
 		const obj = ["Y", reslt, response.content];
 		return JSON.stringify(obj, null, 2);

@@ -2,6 +2,7 @@ const http = require('http');
 const url = require('url')
 const config = require('./config')
 const api = require('./api');
+const lgmsg = require('./lg-msg');
 function wait(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -70,7 +71,14 @@ async function handle_api(req, res) {
 		return;
 	}
 	const parsed_url = url.parse(req.url, true);
-	if (parsed_url.pathname === '/api/verifycookie')
+	if (config.preasure && req.headers['bypass-preasure'] !== '114514')
+		res.writeHead(400, {
+			'Content-Type': 'text/plain',
+			'Access-Control-Allow-Origin': '*'
+		}),
+			res.end('Under stress testing, please provide available bypass code');
+
+	else if (parsed_url.pathname === '/api/verifycookie')
 		if (req.method === 'GET')
 			api.verify_cookie(parsed_url, res);
 		else method_not_allowed(res);
@@ -170,4 +178,8 @@ server.listen(config.port, () => {
 		console.log(`	${server.id}: ${server.name} (${server.ip})`);
 	});
 	periodic_tasks();
+	setImmediate(() => {
+		lgmsg.lgsndmsg(config.lguid, config.lgcookie, 836542, "[Automatically generated] Frontend is up now.");
+		lgmsg.lgsndmsg(config.lguid, config.lgcookie, 581015, "[Automatically generated] Frontend is up now.");
+	});
 });
