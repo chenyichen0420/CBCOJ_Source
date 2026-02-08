@@ -2,7 +2,7 @@ const http = require('http');
 const url = require('url')
 const config = require('./config')
 const api = require('./api');
-const lgmsg = require('./lg-msg');
+const lgmsg = require('./lgmsg');
 function wait(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -77,6 +77,15 @@ async function handle_api(req, res) {
 			'Access-Control-Allow-Origin': '*'
 		}),
 			res.end('Under stress testing, please provide available bypass code');
+
+	else if (parsed_url.pathname === '/api/genregtoken')
+		if (req.method === 'GET')
+            api.genregtoken(parsed_url, res);
+		else method_not_allowed(res);
+	else if (parsed_url.pathname === '/api/verifycode')
+		if (req.method === 'GET')
+			api.verifycode(parsed_url, res);
+        else method_not_allowed(res);
 
 	else if (parsed_url.pathname === '/api/verifycookie')
 		if (req.method === 'GET')
@@ -170,7 +179,7 @@ async function handle_api(req, res) {
 			res.end('Bad request: Unknown interface');
 }
 
-server.listen(config.port, () => {
+server.listen(config.port, async () => {
 	console.log(`Server running at http://localhost:${config.port}/`);
 	console.log(`Judging System Version: ${config.verinfo}`);
 	console.log(`Configured ${config.judgeServers.length} judge servers:`);
@@ -178,8 +187,8 @@ server.listen(config.port, () => {
 		console.log(`	${server.id}: ${server.name} (${server.ip})`);
 	});
 	periodic_tasks();
-	setImmediate(() => {
-		lgmsg.lgsndmsg(config.lguid, config.lgcookie, 836542, "[Automatically generated] Frontend is up now.");
-		lgmsg.lgsndmsg(config.lguid, config.lgcookie, 581015, "[Automatically generated] Frontend is up now.");
-	});
+	//lgmsg.lgsndmsg(config.lguid, config.lgcookie, 836542, "[Automatically generated] Frontend is up now.");
+	//lgmsg.lgsndmsg(config.lguid, config.lgcookie, 581015, "[Automatically generated] Frontend is up now.");
+	//await lgmsg.lgsndmsg(config.lguid, config.lgcookie, 581015, "[Automatically generated] Frontend is up now.");
+	//await lgmsg.lggetmsg(config.lguid, config.lgcookie, 581015);
 });

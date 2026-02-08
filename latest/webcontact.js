@@ -587,6 +587,47 @@ async function initializeConnections() {
 }
 
 /**
+ * generate register info for a new account
+ * @param {any} nam
+ * @param {any} pas
+ * @param {any} uid
+ * @returns
+ */
+async function genreginfo(nam, pas, uid) {
+	const client = connectionManager.getMiddleM();
+	let response = "", token = "", code = "";
+	try {
+		if (!client || !client.isConnected()) throw new Error('Register server not connected');
+		await client.sendOnly('A', nam);
+		await client.sendOnly('A', pas);
+		response = await client.sendAndWait('A', uid);
+		const res = JSON.parse(response.content);
+		if (res[0] !== 'Y') return `["N","${res[1]}"]`;
+		token = res[1];
+		response = await client.sendAndWait('E', token);
+		code = response.content;
+        return `["Y","${token}","${code}"]`;
+	} catch (error) {
+		console.error('Failed to generate register info:', error.message);
+		return `["N","${error.message}"]`;
+	}
+}
+
+
+async function verifycode(token, code) {
+	const client = connectionManager.getMiddleM();
+	try {
+		if (!client || !client.isConnected()) throw new Error('Register server not connected');
+		await client.sendOnly('V', token);
+		const response = await client.sendAndWait('V', code);
+        return response.content;
+	} catch (error) {
+		console.error('Failed to verify register code:', error.message);
+		return "N";
+	}
+}
+
+/**
  * verify cookies
  * @param {any} cookie
  * @returns {string} "Y"/"N"
@@ -1015,6 +1056,10 @@ module.exports = {
 	initializeConnections,
 
 	//API functions
+	//register
+	genreginfo,
+	verifycode,
+
 	//account
 	verify_cookie,
 	login,

@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const config = require('./config');
 const webcon = require('./webcontact')
+const lgmsg = require('./lgmsg');
 webcon.initializeConnections();
 function losepar(parname, query, res) {
 	const has = parname in query;
@@ -16,6 +17,62 @@ function losepar(parname, query, res) {
 	return 0;
 }
 
+async function genregtoken(parsed_url, res) {
+	try {
+		if (losepar('usrname', parsed_url.query, res)) return;
+		if (losepar('paswd', parsed_url.query, res)) return;
+		if (losepar('uid', parsed_url.query, res)) return;
+		const usrname = parsed_url.query.usrname;
+		const paswd = parsed_url.query.paswd;
+		const uid = parsed_url.query.uid;
+		let msg = await lgmsg.lggetmsg(config.lguid, config.lgcookie, uid);
+		if (!msg.success || msg.message.content !== "cbcoj-register") {
+			res.writeHead(200, {
+				'Content-Type': 'application/json',
+				'Access-Control-Allow-Origin': '*'
+			});
+			res.end('["N", "register message check failed"]');
+			return;
+		}
+		const ret = await webcon.genreginfo(usrname, paswd, uid);
+		const JS = JSON.parse(ret);
+		const msgcontent = `Welcome to CBCOJ. Here is your registration verification code:${JS[2]}.`;
+		msg = await lgmsg.lgsndmsg(config.lguid, config.lgcookie, uid, msgcontent);
+		if (!msg.success) {
+			res.writeHead(200, {
+				'Content-Type': 'application/json',
+				'Access-Control-Allow-Origin': '*'
+			});
+			res.end('["N", "register code sending failed"]');
+			return;
+		}
+		res.writeHead(200, {
+			'Content-Type': 'application/json',
+			'Access-Control-Allow-Origin': '*'
+		});
+		res.end(JSON.stringify([JS[0], JS[1]]));
+	}
+	catch (error) {
+		handle_api_err(res, 'Failed to generate register info', error);
+	}
+}
+async function verifycode(parsed_url, res) {
+	try {
+		if (losepar('token', parsed_url.query, res)) return;
+		if (losepar('code', parsed_url.query, res)) return;
+		const token = parsed_url.query.token;
+		const code = parsed_url.query.code;
+		const ret = await webcon.verifycode(token, code);
+		res.writeHead(200, {
+			'Content-Type': 'text/plain',
+			'Access-Control-Allow-Origin': '*'
+		});
+		res.end(ret);
+	}
+	catch (error) {
+		handle_api_err(res, 'Failed to verify register code', error);
+	}
+}
 async function login(parsed_url, res) {
 	try {
 		if (losepar('usrname', parsed_url.query, res)) return;
@@ -344,6 +401,9 @@ function handle_api_err(res, message, error) {
 }
 
 module.exports = {
+	genregtoken,
+	verifycode,
+
 	verify_cookie,
 	login,
 	getinfoshort,
