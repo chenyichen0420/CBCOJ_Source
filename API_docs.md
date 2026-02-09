@@ -1,7 +1,3 @@
-Currently, all sources are just "frontend" sources, providing basic API services.
-
-Bellow is the format of all APIs supported:
-
 ## Registeration
 
 ### Generate Register Token
@@ -267,4 +263,3 @@ Returns:
 		SN_SE = 'S', //acceptable system error
 		SN_SCE = 'E'; //system critical error
   ```
-7. most API will shift to POST method recently.
