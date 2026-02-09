@@ -31,7 +31,7 @@ Warning:
   Once failed, the token will be unavailable to register.
 ```
 
-## Authentication
+## Account Management
 
 ### Verify Cookie
 ```
@@ -60,18 +60,19 @@ GET /getinfoshort
 Parameters:
   key (string) - Key value, uid, username or cookie.
 Returns:
-  ["Y", [uid, username, publiccode]] - Success
+  ["Y", [uid, username, publiccode, slogan]] - Success
   ["N", error] - Failure
 ```
 
 ### Update User Information
 ```
-GET /updinfo
-Parameters:
+POST /updinfo
+Body:
   cookie (string) - Cookie value
   usrname (string) - Username
   paswd (string) - Password
   pubcode (string) - Public code
+  slogan (string) - Slogan
 Returns:
   "Y" - Success
   "N" - Failure
@@ -81,8 +82,8 @@ Returns:
 
 ### Create New Discussion
 ```
-GET /newdisc
-Parameters:
+POST /newdisc
+body:
   cookie (string) - Cookie value
   content (string) - Initial content
 Returns:
@@ -92,8 +93,8 @@ Returns:
 
 ### Post Discussion Message
 ```
-GET /postdisc
-Parameters:
+POST /postdisc
+Body:
   cookie (string) - Cookie value
   content (string) - Discussion content
   cid (string) - Discussion ID
@@ -169,8 +170,8 @@ Returns:
 
 ### Send Message
 ```
-GET /postmsg
-Parameters:
+POST /postmsg
+Body:
   cookie (string) - Cookie value
   target (string) - Target user
   content (string) - Message content
@@ -229,18 +230,6 @@ Returns:
   ["Y",[pid list],problem count] - Success, returns Pid list and total problem count.
   ["N",error msg] - Failure, returns error message.
 ```
-
-## Group(Unsupported)
-
-### Create New Group
-
-### Join Group
-
-### Create Group Discussion
-
-### Post Group Discussion
-
-### Get Group Discussion
 
 ---
 
