@@ -2,7 +2,7 @@ Currently, all sources are just "frontend" sources, providing basic API services
 
 Bellow is the format of all APIs supported:
 
-## Registeration(Unsupported)
+## Registeration
 
 ### Generate Register Token
 ```
@@ -230,6 +230,18 @@ Returns:
   ["N",error msg] - Failure, returns error message.
 ```
 
+## Group(Unsupported)
+
+### Create New Group
+
+### Join Group
+
+### Create Group Discussion
+
+### Post Group Discussion
+
+### Get Group Discussion
+
 ---
 
 **Notes:**
@@ -266,3 +278,4 @@ Returns:
 		SN_SE = 'S', //acceptable system error
 		SN_SCE = 'E'; //system critical error
   ```
+7. most API will shift to POST method recently.
