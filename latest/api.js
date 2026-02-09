@@ -36,6 +36,14 @@ async function genregtoken(parsed_url, res) {
 		}
 		const ret = await webcon.genreginfo(usrname, paswd, uid);
 		const JS = JSON.parse(ret);
+		if (JS.length !== 3) {
+			res.writeHead(200, {
+				'Content-Type': 'application/json',
+				'Access-Control-Allow-Origin': '*'
+			});
+			res.end(JSON.stringify([JS[0], JS[1]]));
+			return;
+		}
 		const msgcontent = `Welcome to CBCOJ. Here is your registration verification code:${JS[2]}.`;
 		msg = await lgmsg.lgsndmsg(config.lguid, config.lgcookie, uid, msgcontent);
 		if (!msg.success) {
@@ -149,14 +157,14 @@ async function updinfo(parsed_url, res) {
 		handle_api_err(res, 'Failed to update info', error);
 	}
 }
-async function newdisc(parsed_url, res) {
+async function newdisc(body, res) {
 	try {
-		if (losepar('cookie', parsed_url.query, res)) return;
-		if (losepar('content', parsed_url.query, res)) return;
-		if (losepar('title', parsed_url.query, res)) return;
-		const cookie = parsed_url.query.cookie;
-		const content = encodeURIComponent(parsed_url.query.content);
-		const title = encodeURIComponent(parsed_url.query.title);
+		if (losepar('cookie', body, res)) return;
+		if (losepar('content', body, res)) return;
+		if (losepar('title', body, res)) return;
+		const cookie = body.cookie;
+		let content = body.content;
+		let title = body.title;
 		if (title.length > 25) {
 			res.writeHead(200, {
 				'Content-Type': 'application/json',
@@ -173,6 +181,8 @@ async function newdisc(parsed_url, res) {
 			res.end(`["N","Content too long"]`);
 			return;
 		}
+		title = encodeURIComponent(title);
+		content = encodeURIComponent(title);
 		const ret = await webcon.newdisc(cookie, content, title);
 		res.writeHead(200, {
 			'Content-Type': 'application/json',
@@ -184,14 +194,14 @@ async function newdisc(parsed_url, res) {
 		handle_api_err(res, 'Failed to creatediscussion', error);
 	}
 }
-async function postdisc(parsed_url, res) {
+async function postdisc(body, res) {
 	try {
-		if (losepar('cookie', parsed_url.query, res)) return;
-		if (losepar('cid', parsed_url.query, res)) return;
-		if (losepar('content', parsed_url.query, res)) return;
-		const cookie = parsed_url.query.cookie;
-		const cid = parsed_url.query.cid;
-		const content = encodeURIComponent(parsed_url.query.content);
+		if (losepar('cookie', body, res)) return;
+		if (losepar('cid', body, res)) return;
+		if (losepar('content', body, res)) return;
+		const cookie = body.cookie;
+		const cid = body.cid;
+		let content = body.content;
 		if (content.length > 380) {
 			res.writeHead(200, {
 				'Content-Type': 'text/plain',
@@ -200,6 +210,7 @@ async function postdisc(parsed_url, res) {
 			res.end("N");
 			return;
 		}
+		content = encodeURIComponent(content);
 		const ret = await webcon.postdisc(cookie, cid, content);
 		res.writeHead(200, {
 			'Content-Type': 'text/plain',
@@ -252,7 +263,16 @@ async function submit(body, res) {
 		const cookie = body.cookie;
 		const pid = body.pid;
 		const lan = body.lan;
-		const code = body.code;
+		let code = body.code;
+		if (code.length >= 102400) {
+			res.writeHead(200, {
+				'Content-Type': 'application/json',
+				'Access-Control-Allow-Origin': '*'
+			});
+			res.end(`["N","code too long"]`);
+			return;
+		}
+		code = Buffer.from(code, 'utf8').toString('base64');
 		ret = await webcon.submit(cookie, pid, lan, code);
 		res.writeHead(200, {
 			'Content-Type': 'application/json',
@@ -298,14 +318,14 @@ async function getrecordlist(parsed_url, res) {
 		handle_api_err(res, 'Failed to get record list', error);
 	}
 }
-async function postmsg(parsed_url, res) {
+async function postmsg(body, res) {
 	try {
-		if (losepar('cookie', parsed_url.query, res)) return;
-		if (losepar('target', parsed_url.query, res)) return;
-		if (losepar('content', parsed_url.query, res)) return;
-		const cookie = parsed_url.query.cookie;
-		const target = parsed_url.query.target;
-		const content = encodeURIComponent(parsed_url.query.content);
+		if (losepar('cookie', body, res)) return;
+		if (losepar('target', body, res)) return;
+		if (losepar('content', body, res)) return;
+		const cookie = body.cookie;
+		const target = body.target;
+		const content = body.content;
 		if (content.length > 80) {
 			res.writeHead(200, {
 				'Content-Type': 'text/plain',
@@ -314,6 +334,7 @@ async function postmsg(parsed_url, res) {
 			res.end("N");
 			return;
 		}
+		content = encodeURIComponent(content);
 		ret = await webcon.postmsg(cookie, target, content);
 		res.writeHead(200, {
 			'Content-Type': 'text/plain',

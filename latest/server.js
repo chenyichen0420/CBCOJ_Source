@@ -105,12 +105,70 @@ async function handle_api(req, res) {
 		else method_not_allowed(res);
 
 	else if (parsed_url.pathname === '/api/newdisc')
-		if (req.method === 'GET')
-			api.newdisc(parsed_url, res);
+		if (req.method === 'POST') {
+			let body = '';
+			req.setEncoding('utf8');
+			req.on('data', chunk => {
+				body += chunk.toString();
+				if (body.length >= 103424) {
+					req.destroy();
+					res.writeHead(413, {
+						'Content-Type': 'application/json'
+					});
+					res.end(JSON.stringify({
+						error: 'Payload too large',
+						maxSize: `${103424}B`
+					}));
+					return;
+				}
+			});
+			req.on('end', () => {
+				try {
+					const bodyData = body ? JSON.parse(body) : {};
+					api.newdisc(bodyData, res);
+				} catch (error) {
+					console.log(error)
+					res.writeHead(500, {
+						'Content-Type': 'text/plain',
+						'Access-Control-Allow-Origin': '*'
+					});
+					res.end('Server Internal Error');
+				}
+			});
+		}
 		else method_not_allowed(res);
 	else if (parsed_url.pathname === '/api/postdisc')
-		if (req.method === 'GET')
-			api.postdisc(parsed_url, res);
+		if (req.method === 'POST') {
+			let body = '';
+			req.setEncoding('utf8');
+			req.on('data', chunk => {
+				body += chunk.toString();
+				if (body.length >= 103424) {
+					req.destroy();
+					res.writeHead(413, {
+						'Content-Type': 'application/json'
+					});
+					res.end(JSON.stringify({
+						error: 'Payload too large',
+						maxSize: `${103424}B`
+					}));
+					return;
+				}
+			});
+			req.on('end', () => {
+				try {
+					const bodyData = body ? JSON.parse(body) : {};
+					api.postdisc(bodyData, res);
+				} catch (error) {
+					console.log(error)
+					res.writeHead(500, {
+						'Content-Type': 'text/plain',
+						'Access-Control-Allow-Origin': '*'
+					});
+					res.end('Server Internal Error');
+				}
+			});
+		}
 		else method_not_allowed(res);
 	else if (parsed_url.pathname === '/api/getdisc')
 		if (req.method === 'GET')
@@ -132,8 +190,37 @@ async function handle_api(req, res) {
 		else method_not_allowed(res);
 
 	else if (parsed_url.pathname === '/api/postmsg')
-		if (req.method === 'GET')
-			api.postmsg(parsed_url, res);
+		if (req.method === 'POST') {
+			let body = '';
+			req.setEncoding('utf8');
+			req.on('data', chunk => {
+				body += chunk.toString();
+				if (body.length >= 103424) {
+					req.destroy();
+					res.writeHead(413, {
+						'Content-Type': 'application/json'
+					});
+					res.end(JSON.stringify({
+						error: 'Payload too large',
+						maxSize: `${103424}B`
+					}));
+					return;
+				}
+			});
+			req.on('end', () => {
+				try {
+					const bodyData = body ? JSON.parse(body) : {};
+					api.postmsg(bodyData, res);
+				} catch (error) {
+					console.log(error)
+					res.writeHead(500, {
+						'Content-Type': 'text/plain',
+						'Access-Control-Allow-Origin': '*'
+					});
+					res.end('Server Internal Error');
+				}
+			});
+		}
 		else method_not_allowed(res);
 	else if (parsed_url.pathname === '/api/getmsg')
 		if (req.method === 'GET')
@@ -155,6 +242,17 @@ async function handle_api(req, res) {
 			req.setEncoding('utf8');
 			req.on('data', chunk => {
 				body += chunk.toString();
+				if (body.length >= 103424) {
+					req.destroy();
+					res.writeHead(413, {
+						'Content-Type': 'application/json'
+					});
+					res.end(JSON.stringify({
+						error: 'Payload too large',
+						maxSize: `${103424}B`
+					}));
+					return;
+				}
 			});
 			req.on('end', () => {
 				try {

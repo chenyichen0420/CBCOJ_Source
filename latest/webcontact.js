@@ -620,6 +620,7 @@ async function verifycode(token, code) {
 		if (!client || !client.isConnected()) throw new Error('Register server not connected');
 		await client.sendOnly('V', token);
 		const response = await client.sendAndWait('V', code);
+		console.log(response);
         return response.content;
 	} catch (error) {
 		console.error('Failed to verify register code:', error.message);
