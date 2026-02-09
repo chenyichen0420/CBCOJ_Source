@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>题库 - CBCOJ</title>
+    <link rel="stylesheet" href="/assets/base.css">
+    <link rel="stylesheet" href="/assets/components.css">
+    <link rel="stylesheet" href="/assets/layout.css">
+</head>
+
+<body>
+    <nav>
+        <div class="nav-left">
+            <a href="/" class="logo"><img src="/favicon.ico" width="20" height="20"> CBCOJ </a>
+            <a href="/problemlist" style="color: var(--link); text-decoration: underline;">题库</a>
+            <a href="/discussions">讨论</a>
+            <a href="/submissionlist">评测列表</a>
+            <a href="/chat">私信</a>
+            <a href="/settings">个人设置</a>
+        </div>
+        <div class="nav-right">
+            <div class="login-content">
+                <div id="login-area"></div>
+                <div id="login-status">
+                    <div class="status-indicator" id="statusIndicator"></div>
+                    <span id="statusText">正在检测登录状态...</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="page">
+        <div class="container">
+            <h1>题库</h1>
+            <div id="problemlist"></div>
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </main>
+
+    <script type="text/javascript" src="/assets/checklogin.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const pageId = urlParams.get('page');
+        let currentPage = 1;
+        const perPage = 10;
+        async function loadproblemlist(page) {
+            try {
+                const response = await fetch(BASE_URL + `/api/getproblemlist?page=${page}`);
+                const data = await response.json();
+                if (data[0] !== 'Y') {
+                    console.error('Failed to load problem list:', data[1]);
+                    return;
+                }
+                const problemlistDiv = document.getElementById('problemlist');
+                problemlistDiv.innerHTML = '';
+                data[1].forEach(problem => {
+                    const div = document.createElement('div');
+                    div.className = 'problem';
+                    div.innerHTML = `<a href="problem/${problem}">${problem}</a>`;
+                    problemlistDiv.appendChild(div);
+                });
+                const paginationDiv = document.getElementById('pagination');
+                paginationDiv.innerHTML = '';
+                let totalPages = parseInt(data[2], 10) / perPage + (data[2] % perPage === 0 ? 0 : 1);
+                for (let i = Math.max(1, page - 2); i <= totalPages && i <= page + 2; i++) {
+                    const a = document.createElement('a');
+                    if (i === page) {
+                        a.style.background = 'rgba(78,161,255,.24)';
+                    }
+                    else {
+                        a.href = '/problemlist?page=' + i;
+                    }
+                    a.textContent = i;
+                    a.onclick = () => loadproblemlist(i);
+                    paginationDiv.appendChild(a);
+                }
+            } catch (error) {
+                document.getElementById('problemlist').textContent = '加载题库失败';
+            }
+        }
+        checkLogin();
+        loadproblemlist(currentPage);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="PageTitle">题目详情 - CBCOJ</title>
+    <link rel="stylesheet" href="/assets/base.css">
+    <link rel="stylesheet" href="/assets/components.css">
+    <link rel="stylesheet" href="/assets/layout.css">
+    
+    <!-- MathJax 配置 -->
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                processEscapes: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+            }
+        };
+    </script>
+    
+    <!-- 引入 Marked.js 和 MathJax -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+    <nav>
+        <div class="nav-left">
+            <a href="/" class="logo"><img src="/favicon.ico" width="20" height="20"> CBCOJ </a>
+            <a href="/problemlist">题库</a>
+            <a href="/discussions">讨论</a>
+            <a href="/submissionlist">评测列表</a>
+            <a href="/chat">私信</a>
+            <a href="/settings">个人设置</a>
+        </div>
+        <div class="nav-right">
+            <div class="login-content">
+                <div id="login-area"></div>
+                <div id="login-status">
+                    <div class="status-indicator" id="statusIndicator"></div>
+                    <span id="statusText">正在检测登录状态...</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="page">
+        <div class="container">
+            <div class="content problem-layout">
+                <div class="left card">
+                    <!-- 修改这里：标题与限制信息左右布局 -->
+                    <div class="problem-header">
+                        <div class="problem-title-section">
+                            <h1 id="title"></h1>
+                        </div>
+                        <div class="problem-limits-section">
+                            <div id="time-limit" class="limit-item"></div>
+                            <div id="memory-limit" class="limit-item"></div>
+                        </div>
+                    </div>
+                    <div id="background"></div>
+                    <div id="description"></div>
+                    <div id="inputfmt"></div>
+                    <div id="outputfmt"></div>
+                    <div id="sample"></div>
+                    <div id="hint"></div>
+                </div>
+                <div class="submit-form card">
+                    <h2>提交代码</h2>
+                    <form id="submit-form" enctype="multipart/form-data">
+                        <label for="language">语言:</label>
+                        <select id="language" name="lan" required
+                            style="color: black; background-color: rgba(234, 244, 255, 0.32);">
+                            <option value="C++14">C++ 14</option>
+                            <option value="C++14-O2">C++ 14(O2)</option>
+                            <option value="C++17">C++ 17</option>
+                            <option value="C++17-O2">C++ 17(O2)</option>
+                        </select>
+                        <label for="code-file">代码文件:</label>
+                        <input type="file" id="code-file" name="code" required>
+                        <button type="submit">提交</button>
+                    </form>
+                    <div id="submit-message"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="text/javascript" src="/assets/checklogin.js"></script>
+    <script>
+        // 获取URL参数
+        const urlParams = new URLSearchParams(window.location.search);
+        const problemId = window.location.pathname.split('/').pop() || "aplusb";
+        
+        // 配置marked.js
+        marked.setOptions({
+            breaks: true, // 将换行符转换为<br>
+            gfm: true,    // 启用GitHub风格的Markdown
+            headerIds: false, // 禁用自动生成的header IDs
+            mangle: false // 禁用邮件地址混淆
+        });
+        
+        // 渲染Markdown并处理LaTeX
+        function renderMarkdownWithLaTeX(markdown) {
+            if (!markdown) return '';
+            
+            // 使用marked.js将Markdown转换为HTML
+            let html = marked.parse(markdown);
+            
+            // 返回HTML，MathJax会自动处理其中的LaTeX公式
+            return html;
+        }
+        
+        // 加载题目
+        async function loadProblem() {
+            try {
+                const response = await fetch(BASE_URL + `/api/getproblem?pid=${problemId}`);
+                const problem = await response.json();
+                
+                // 设置标题
+                document.getElementById('title').textContent = problem.title;
+                document.getElementById('PageTitle').textContent = problem.title + ' - CBCOJ';
+                
+                // 渲染并显示题目内容
+                document.getElementById('background').innerHTML = 
+                    '<h3>题目背景</h3>' + renderMarkdownWithLaTeX(problem.background);
+                
+                document.getElementById('description').innerHTML = 
+                    '<h3>题目描述</h3>' + renderMarkdownWithLaTeX(problem.description);
+                
+                document.getElementById('inputfmt').innerHTML = 
+                    '<h3>输入格式</h3>' + renderMarkdownWithLaTeX(problem.inputfmt);
+                
+                document.getElementById('outputfmt').innerHTML = 
+                    '<h3>输出格式</h3>' + renderMarkdownWithLaTeX(problem.outputfmt);
+                
+                document.getElementById('hint').innerHTML = 
+                    '<h3>提示</h3>' + renderMarkdownWithLaTeX(problem.hint);
+                
+                // 告诉MathJax重新渲染页面中的公式
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    MathJax.typesetPromise();
+                }
+
+                // 设置时空限制
+                document.getElementById('time-limit').textContent = `时间限制: ${problem.timelm}ms`;
+                document.getElementById('memory-limit').textContent = `内存限制: ${problem.memlm}MB`;
+
+                let samplecount = 0;
+                for (const sample of problem.sample) {
+                    const sampleDiv = document.createElement('div');
+                    sampleDiv.classList.add('sample');
+                    sampleDiv.innerHTML = `
+                        <h4>样例输入${samplecount + 1}</h4>
+                        <pre>${sample.input}</pre>
+                        <h4>样例输出${samplecount + 1}</h4>
+                        <pre>${sample.output}</pre>
+                    `;
+                    document.getElementById('sample').appendChild(sampleDiv);
+                    samplecount++;
+                }
+            } catch (error) {
+                document.getElementById('title').textContent = '加载题目失败';
+                console.error('加载题目失败:', error);
+            }
+        }
+        
+        // 提交表单处理
+        document.getElementById('submit-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const cookie = document.cookie.split('; ').find(row => row.startsWith('user_cookie='))?.split('=')[1];
+            if (!cookie) {
+                document.getElementById('submit-message').textContent = '请先登录';
+                return;
+            }
+            const formData = new FormData(this);
+            formData.append('cookie', cookie);
+            formData.append('pid', problemId);
+            let code = await formData.get('code').text();
+            formData.delete('code');
+            formData.append('code', code);
+            try {
+                const response = await fetch(BASE_URL + '/api/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(Object.fromEntries(formData))
+                });
+                const result = await response.text();
+                console.log('Submission response:', result);
+                const parsed = JSON.parse(result);
+                document.getElementById('submit-message').textContent = parsed[0] === 'Y' ? `提交成功： ${parsed[1]}` : `提交失败：${parsed[1]}`;
+                if (parsed[0] !== 'Y') return;
+                setTimeout(() => {
+                    window.location.href = `status/${parsed[1]}`;
+                }, 2000);
+            } catch (error) {
+                document.getElementById('submit-message').textContent = '提交请求失败';
+                console.error('Error during submission request:', error);
+            }
+        });
+        
+        // 初始化
+        checkLogin();
+        if (problemId) {
+            loadProblem();
+        }
+    </script>
+    
+    <style>
+        /* 添加标题与限制信息左右布局的样式 */
+        .problem-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        
+        .problem-title-section {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .problem-limits-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: right;
+            min-width: 200px;
+        }
+        
+        .limit-item {
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 14px;
+            color: var(--muted);
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .problem-header {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .problem-title-section,
+            .problem-limits-section {
+                min-width: 100%;
+                width: 100%;
+            }
+            
+            .problem-limits-section {
+                text-align: left;
+                flex-direction: row;
+                justify-content: space-between;
+            }
+            
+            .limit-item {
+                flex: 1;
+                text-align: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .problem-limits-section {
+                flex-direction: column;
+            }
+        }
+    </style>
+</body>
+
+</html>

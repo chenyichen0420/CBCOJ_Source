@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBCOJ - 讨论区</title>
+    <link rel="stylesheet" href="/assets/base.css">
+    <link rel="stylesheet" href="/assets/components.css">
+    <link rel="stylesheet" href="/assets/layout.css">
+</head>
+
+<body>
+    <nav>
+        <div class="nav-left">
+            <a href="/" class="logo"><img src="/favicon.ico" width="20" height="20"> CBCOJ </a>
+            <a href="/problemlist">题库</a>
+            <a href="/discussions" style="color: var(--link); text-decoration: underline;">讨论</a>
+            <a href="/submissionlist">评测列表</a>
+            <a href="/chat">私信</a>
+            <a href="/settings">个人设置</a>
+        </div>
+        <div class="nav-right">
+            <div class="login-content">
+                <div id="login-area"></div>
+                <div id="login-status">
+                    <div class="status-indicator" id="statusIndicator"></div>
+                    <span id="statusText">正在检测登录状态...</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="page">
+        <div class="container">
+            <h1>讨论区</h1>
+            <p class="muted">在这里与其他用户交流算法、分享经验、提出问题</p>
+
+            <div class="discussion-layout">
+                <div class="left">
+                    <div class="discussion-list" id="discussion-list">
+                        <h3 style="margin-top: 0px;">最新讨论</h3>
+                    </div>
+
+                    <div class="pagination" id="pagination">
+                        <a href="#" style="background: rgba(78,161,255,.24);">1</a>
+                        <a href="#">2</a>
+                        <a href="#">3</a>
+                        <a href="#">4</a>
+                        <a href="#">5</a>
+                        <a href="#">下一页</a>
+                    </div>
+                </div>
+
+                <div class="right">
+                    <div class="card" style="margin-top: 18px; padding: 6px 10px 6px 10px;">
+                        <h3>讨论区规则</h3>
+                        <ol style="padding-left: 20px; color: var(--muted);">
+                            <li>尊重他人，文明交流</li>
+                            <li>禁止发布无关广告</li>
+                            <li>提问前先搜索类似问题</li>
+                            <li>解答问题时尽量详细</li>
+                            <li>欢迎分享学习心得</li>
+                        </ol>
+                    </div>
+
+                    <div class="card form-card" style="margin-top: 18px;">
+                        <h3>发布新讨论</h3>
+                        <form id="new-discussion-form">
+                            <label for="discussion-title">标题</label>
+                            <input type="text" id="discussion-title" placeholder="请输入讨论标题" required>
+
+                            <label for="discussion-content">内容</label>
+                            <textarea id="discussion-content" rows="6" placeholder="详细描述你的问题或想法..." required></textarea>
+
+                            <button type="submit">发布讨论</button>
+                            <div id="submit-message"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="text/javascript" src="/assets/checklogin.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const discussionPage = parseInt(urlParams.get('page'), 10) || 1;
+        checkLogin();
+
+        if (getcookie() === "gunmu") {
+            console.log("未登录，返回登录界面");
+            window.location.href = "/login";
+        }
+
+        async function getdiscussionlist() {
+            const DiscussionList = document.getElementById('discussion-list');
+
+            try {
+                const response = await fetch(BASE_URL + `/api/getdisclist?page=${discussionPage}&cookie=${getcookie()}`);
+                const data = await response.json();
+                if (data[0] !== 'Y') {
+                    DiscussionList.innerHTML = '<p>加载讨论列表失败</p>';
+                    return;
+                }
+                for (const discussion of data[1]) {
+                    const id = discussion.cid || '编号';
+                    const title = discussion.title || '标题';
+                    const author = discussion.author || '作者';
+                    const time = new Date(discussion.time * 1000 || 0).toLocaleString();
+                    const shortcontent = discussion.topic || '内容';
+                    const replycount = discussion.replycount || -1;
+                    DiscussionList.innerHTML += `
+                    <div class="discussion-item card">
+                        <div class="discussion-header">
+                            <span class="discussion-author">${author}</span>
+                            <span class="discussion-date">${time}</span>
+                        </div>
+                        <h4 class="discussion-title">
+                            <a href="discussion-detail/${id}">${title}</a>
+                        </h4>
+                        <div class="discussion-content">
+                            ${shortcontent}
+                        </div>
+                        <div class="discussion-stats">
+                            <span class="discussion-stat">回复 ${replycount}</span>
+                        </div>
+                    </div>
+                    `;
+                }
+                const Pages = data[2];
+                const Pagination = document.getElementById('pagination');
+                Pagination.innerHTML = '';
+                for (let i = Math.max(1, discussionPage - 2); i <= Pages && i <= discussionPage + 2; i++) {
+                    if (i === discussionPage) {
+                        Pagination.innerHTML += `<a href="discussions?page=${i}" style="background: rgba(78,161,255,.24);">${i}</a>`;
+                    } else {
+                        Pagination.innerHTML += `<a href="discussions?page=${i}">${i}</a>`;
+                    }
+                }
+            } catch (error) {
+                console.error(error);
+                DiscussionList.innerHTML = '<p>加载讨论列表失败</p>';
+                return;
+            }
+        }
+        getdiscussionlist();
+        document.getElementById('new-discussion-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const messageDiv = document.getElementById('submit-message');
+            messageDiv.textContent = '发送中...';
+            const title = document.getElementById('discussion-title').value;
+            const content = document.getElementById('discussion-content').value;
+            fetch(BASE_URL + `/api/newdisc?cookie=${getcookie()}&title=${encodeURIComponent(title)}&content=${encodeURIComponent(content)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data[0] === 'Y') {
+                        messageDiv.textContent = '讨论发布成功！正在跳转...';
+                        setTimeout(() => {
+                            window.location.href = `discussion-detail/${data[1]}`;
+                        }, 1500);
+                    } else {
+                        messageDiv.textContent = `发布失败: ${data[1]}`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    messageDiv.textContent = '发布失败: 网络错误';
+                });
+            setTimeout(() => {
+                messageDiv.textContent = '';
+            }, 3000);
+        });
+    </script>
+</body>
+
+</html>
