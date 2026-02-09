@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBCOJ - 讨论详情</title>
+    <link rel="stylesheet" href="/assets/base.css">
+    <link rel="stylesheet" href="/assets/components.css">
+    <link rel="stylesheet" href="/assets/layout.css">
+    <style>
+        /* 讨论回复样式 */
+        .discussion-reply {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .discussion-reply-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .discussion-reply-author {
+            font-weight: bold;
+            color: #4ea1ff;
+        }
+        
+        .discussion-date {
+            color: #888;
+            font-size: 0.9em;
+        }
+        
+        .discussion-reply-content {
+            line-height: 1.6;
+            padding-left: 10px;
+            border-left: 3px solid #f0f0f0;
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <div class="nav-left">
+            <a href="/" class="logo"><img src="/favicon.ico" width="20" height="20"> CBCOJ </a>
+            <a href="/problemlist">题库</a>
+            <a href="/discussions">讨论</a>
+            <a href="/submissionlist">评测列表</a>
+            <a href="/chat">私信</a>
+            <a href="/settings">个人设置</a>
+        </div>
+        <div class="nav-right">
+            <div class="login-content">
+                <div id="login-area"></div>
+                <div id="login-status">
+                    <div class="status-indicator" id="statusIndicator"></div>
+                    <span id="statusText">正在检测登录状态...</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="page">
+        <div class="container">
+            <div class="discussion-layout">
+                <div class="discussion-content left card">
+                    <h1 class="discussion-title" id="discussion-title">讨论标题</h1>
+                    <div class="discussion-meta">
+                        <span class="discussion-author" id="discussion-author">作者: 用户名</span>
+                        <span class="discussion-date" id="discussion-date">发表于: 2024-06-01 12:00</span>
+                    </div>
+                    <div class="discussion-body" id="discussion-body">
+                        <p>讨论内容。</p>
+                    </div>
+                    <hr>
+                    <div class="discussion-body" id="discussion-reply"></div>
+                    <div id="pagination" class="pagination" style="margin-top: 20px;"></div>
+                </div>
+                <div class="card right">
+                    <h2>回复讨论</h2>
+                    <form id="reply-form">
+                        <textarea id="reply-message" rows="5" style="width: 100%;" placeholder="在此输入您的回复内容..."></textarea>
+                        <button type="submit" style="margin-top: 10px;">提交回复</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="/assets/checklogin.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const discussionId = window.location.pathname.split('/').pop() || 1;
+        const discussionPage = parseInt(urlParams.get('page'), 10) || 1;
+        const perPage = 10;
+
+        if (getcookie() === "gunmu") {
+            console.log("未登录，返回登录界面");
+            window.location.href = "/login";
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            checkLogin();
+            loadDiscussionDetail();
+        });
+
+        async function loadDiscussionDetail() {
+            const Pagination = document.getElementById('pagination');
+            const replyContainer = document.getElementById('discussion-reply');
+            
+            // HTML 转义函数
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            // 处理换行符，将 \n 转换为 <br>
+            function formatContent(text) {
+                return escapeHtml(text).replace(/\n/g, '<br>');
+            }
+            
+            try {
+                const response = await fetch(BASE_URL + `/api/getdisc?cookie=${getcookie()}&cid=${discussionId}&page=${discussionPage}`);
+                const data = await response.json();
+                
+                if (data[0] !== 'Y') {
+                    document.getElementById('discussion-body').innerHTML = '<p>加载讨论详情失败</p>';
+                    return;
+                }
+                
+                const discussion = data[1];
+                
+                // 设置讨论标题和内容（安全处理）
+                document.getElementById('discussion-title').textContent = decodeURIComponent(discussion[0].msg);
+                
+                getusername(discussion[0].uid).then(username => {
+                    document.getElementById('discussion-author').textContent = `作者：${username}`;
+                });
+                
+                document.getElementById('discussion-date').textContent = `发表于：${new Date(discussion[0].time * 1000).toLocaleString()}`;
+                document.getElementById('discussion-body').innerHTML = formatContent(decodeURIComponent(discussion[1].msg));
+                
+                // 清空之前的回复
+                replyContainer.innerHTML = '';
+                
+                // 处理回复（从索引2开始，因为0是标题，1是内容）
+                for (let i = 2; i < discussion.length; i++) {
+                    const reply = discussion[i];
+                    
+                    const replyDiv = document.createElement('div');
+                    replyDiv.classList.add('discussion-reply');
+                    
+                    // 获取用户名并创建回复元素
+                    getusername(reply.uid).then(username => {
+                        const header = document.createElement('div');
+                        header.classList.add('discussion-reply-header');
+                        
+                        const authorSpan = document.createElement('span');
+                        authorSpan.classList.add('discussion-reply-author');
+                        authorSpan.textContent = `${username}`;
+                        
+                        const dateSpan = document.createElement('span');
+                        dateSpan.classList.add('discussion-date');
+                        dateSpan.textContent = `${new Date(reply.time * 1000).toLocaleString()}`;
+                        
+                        header.appendChild(authorSpan);
+                        header.appendChild(dateSpan);
+                        
+                        const contentDiv = document.createElement('div');
+                        contentDiv.classList.add('discussion-reply-content');
+                        contentDiv.innerHTML = formatContent(decodeURIComponent(reply.msg));
+                        
+                        replyDiv.appendChild(header);
+                        replyDiv.appendChild(contentDiv);
+                    });
+                    
+                    replyContainer.appendChild(replyDiv);
+                }
+                
+                // 分页处理
+                const Pages = data[2];
+                for (let i = Math.max(1, discussionPage - 2); i <= discussionPage + 2 && i <= Pages; i++) {
+                    const pageLink = document.createElement('a');
+                    pageLink.href = `discussion-detail/${discussionId}?page=${i}`;
+                    pageLink.textContent = i;
+                    
+                    if (i === discussionPage) {
+                        pageLink.style.background = 'rgba(78,161,255,.24)';
+                    }
+                    
+                    Pagination.appendChild(pageLink);
+                }
+                
+            } catch (error) {
+                console.error("加载讨论详情时出错:", error);
+            }
+        }
+        document.addEventListener('submit', function (e) {
+            if (e.target && e.target.id === 'reply-form') {
+                e.preventDefault();
+                const message = document.getElementById('reply-message').value;
+                if (!message) {
+                    alert('回复内容不能为空');
+                    return;
+                }
+                try {
+                    const response = fetch(BASE_URL + `/api/postdisc?cookie=${getcookie()}&cid=${discussionId}&content=${encodeURIComponent(message)}`);
+                    response.then(res => res.text()).then(data => {
+                        if (data === 'Y') {
+                            window.location.reload();
+                        } else {
+                            alert('回复失败');
+                        }
+                    });
+                } catch (error) {
+                    console.error("提交回复时出错:", error);
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

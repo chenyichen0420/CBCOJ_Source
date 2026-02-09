@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="PageTitle">题目详情 - CBCOJ</title>
+    <link rel="stylesheet" href="/assets/base.css">
+    <link rel="stylesheet" href="/assets/components.css">
+    <link rel="stylesheet" href="/assets/layout.css">
+    <style>
+        /* 添加代码框自动换行样式 */
+        pre.code {
+            white-space: pre-wrap;
+            /* 保留空白符序列，但正常换行 */
+            word-wrap: break-word;
+            /* 在长单词或URL内部换行 */
+            overflow-wrap: break-word;
+            /* 更现代的换行方式 */
+            background-color: var(--card-bg);
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            max-width: 100%;
+            overflow-x: auto;
+            /* 如果内容真的非常长，还是允许横向滚动 */
+            background-color: rgba(0, 0, 0, .25);
+        }
+
+        /* 确保代码在pre内正常显示 */
+        pre.code code {
+            display: block;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <div class="nav-left">
+            <a href="/" class="logo"><img src="/favicon.ico" width="20" height="20"> CBCOJ </a>
+            <a href="/problemlist">题库</a>
+            <a href="/discussions">讨论</a>
+            <a href="/submissionlist">评测列表</a>
+            <a href="/chat">私信</a>
+            <a href="/settings">个人设置</a>
+        </div>
+        <div class="nav-right">
+            <div class="login-content">
+                <div id="login-area"></div>
+                <div id="login-status">
+                    <div class="status-indicator" id="statusIndicator"></div>
+                    <span id="statusText">正在检测登录状态...</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="page">
+        <div class="container">
+            <div class="status-layout">
+                <div class="left card">
+                    <h1 id="PageTitle">评测结果 - CBCOJ</h1>
+                    <div id="record-content"></div>
+                </div>
+                <div class="right card">
+                    <div class="card" id="basic-user-info" style="padding: 10px 10px 10px 10px;">
+                        <div id="user">提交用户：滚木</div>
+                    </div>
+                    <div class="card" style="margin-top: 18px; padding: 10px 10px 10px 10px;">
+                        <h3>评测结果说明</h3>
+                        <ol style="padding-left: 20px; color: var(--muted);">
+                            <li><strong>Accepted (AC)</strong>: 代码通过了所有测试点。</li>
+                            <li><strong>Wrong Answer (WA)</strong>: 代码的输出与预期不符。</li>
+                            <li><strong>Time Limit Exceeded (TLE)</strong>: 代码运行时间超过了题目规定的时间限制。</li>
+                            <li><strong>Memory Limit Exceeded (MLE)</strong>: 代码使用的内存超过了题目规定的内存限制。</li>
+                            <li><strong>Runtime Error (RE)</strong>: 代码在运行过程中发生了错误，如除零错误、数组越界等。</li>
+                            <li><strong>Compilation Error (CE)</strong>: 代码无法通过编译。</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="text/javascript" src="/assets/checklogin.js"></script>
+    <script>
+        if (getcookie() === 'gunmu') {
+            window.location.href = '/login';
+        }
+
+        function dealresultcolor(result) {
+            if (result === 200) return "green";
+            else if (result === 403) return "yellow";
+            else if (result === 400) return "yellow";
+            else if (result === 408) return "lightblue";
+            else if (result === 406) return "red";
+            else if (result === 413) return "lightblue";
+            else if (result === 502) return "purple";
+            else return "white";
+        }
+        function dealresulttext(result) {
+            if (result === 200) return "Accepted";
+            else if (result === 403) return "Rejected";
+            else if (result === 400) return "Compilation Error";
+            else if (result === 408) return "Time Limit Exceeded";
+            else if (result === 406) return "Wrong Answer";
+            else if (result === 413) return "Memory Limit Exceeded";
+            else if (result === 502) return "Runtime Error";
+            else if (result === 500) return "System Error";
+            else if (result === 202) return "In Queue";
+            else if (result === 206) return "Judging";
+            else if (result === 404) return "Not Evaluated";
+            else return "Unknown Error";
+        }
+        checkLogin();
+        const urlParams = new URLSearchParams(window.location.search);
+        const submissionId = window.location.pathname.split('/').pop();
+        const cookie = getcookie();
+        if (submissionId !== null) {
+            document.getElementById('PageTitle').textContent = `评测结果 - ${submissionId} - CBCOJ`;
+            document.getElementById('record-content').textContent = '正在加载评测结果...';
+        } else {
+            document.getElementById('record-content').textContent = '无效的提交ID';
+        }
+        document.addEventListener('DOMContentLoaded', async () => {
+            const recordcontent = document.getElementById('record-content');
+            try {
+                const response = await fetch(BASE_URL + `/api/record?rid=${submissionId}&cookie=${cookie}`);
+                let result;
+                const text = await response.text();
+
+                try {
+                    result = JSON.parse(text);
+                } catch (e) {
+                    console.log('Raw response text:', text);
+                    recordcontent.textContent = '加载评测结果失败';
+                    return;
+                }
+
+                if (result[0] === "Y") {
+                    const details = JSON.parse(result[1]);
+                    document.getElementById('user').innerHTML = `<h3>提交用户</h3><p>${details.uid}</p>`;
+                    recordcontent.innerHTML = `
+                        <h3>评测结果</h3>
+                        <p style="color: ${dealresultcolor(details.overview.code)}">${details.overview.describe}</p>
+                        <p>时间: ${details.overview.time}ms</p>
+                        <p>内存: ${details.overview.memory / 1024 / 1024}MB</p>
+                        <p>得分: ${details.overview.score}</p>
+                        <h4>测试点详情</h4>
+                    `;
+                    let cnt = 1;
+                    details.detail.forEach(testcase => {
+                        let res = `
+                        <details>
+                            <summary style="color: ${dealresultcolor(testcase.overview.code)}">测试组 ${cnt++} : ${testcase.overview.describe}</summary>
+                            <div style="margin-left: 20px; margin-bottom: 10px; font-size: 14px;">
+                                <p>测试组状态: <span style="color: ${dealresultcolor(testcase.overview.code)}">${dealresulttext(testcase.overview.code)}</span></p>
+                                <p>测试组时间: ${testcase.overview.time}ms</p>
+                                <p>测试组内存: ${testcase.overview.memory / 1024 / 1024}MB</p>
+                                <p>测试组得分: ${testcase.overview.score}</p>
+                            </div>
+                        `;
+                        let subcnt = 1;
+                        testcase.detail.forEach(subcase => {
+                            res += `
+                                <details>
+                                    <summary style="color: ${dealresultcolor(subcase.code)}">测试点 ${subcnt++} : ${dealresulttext(subcase.code)}</summary>
+                                    <div style="margin-left: 20px; margin-bottom: 10px; font-size: 14px;">
+                                        <p>测试点时间: ${subcase.time}ms</p>
+                                        <p>测试点内存: ${subcase.memory / 1024 / 1024}MB</p>
+                                        <p>测试点得分: ${subcase.score}</p>
+                                    </div>
+                                </details>
+                            `;
+                        });
+                        recordcontent.innerHTML += res + `</details>`;
+                    });
+                    recordcontent.innerHTML += `
+                        <details>
+                        <summary>源代码</summary>
+                        <pre class="code"><code id="source-code"></code></pre>
+                        </details>
+                    `;
+                    document.getElementById('source-code').textContent = result[2];
+                } else if (result[0] === "P") {
+                    recordcontent.innerHTML = `
+                        <h3>评测结果</h3>
+                        <p>评测尚未完成，当前状态如下，请耐心等待：</p>
+                        <p>状态: ${dealresulttext(result[1].code)}</p>
+                        <p>详情: ${result[1].describe}</p>
+                    `;
+                } else {
+                    console.error('Error fetching record:', result);
+                    recordcontent.textContent = '加载评测结果失败';
+                }
+            } catch (error) {
+                console.error('Error fetching record:', error);
+                recordcontent.textContent = '加载评测结果失败';
+            }
+        });
+    </script>
+</body>
+
+</html>

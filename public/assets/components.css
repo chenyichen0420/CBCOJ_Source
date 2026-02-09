@@ -1,0 +1,233 @@
+/* ===== CBCOJ Modern UI - Components ===== */
+
+/* ===== Cards ===== */
+.card {
+  background: linear-gradient(180deg, var(--card), var(--card2));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+/* ===== Forms ===== */
+form {
+  margin: 24px auto 0;
+  padding: 20px;
+  max-width: 420px;
+}
+
+.form-card {
+  padding: 22px;
+}
+
+label {
+  display: block;
+  font-weight: 700;
+  margin: 10px 0 6px;
+  color: var(--muted);
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  background: rgba(255, 255, 255, .06);
+  color: var(--text);
+  outline: none;
+  transition: border-color .2s ease, background .2s ease;
+  font-family: inherit;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(124, 196, 255, .65);
+  background: rgba(255, 255, 255, .08);
+}
+
+button {
+  margin-top: 12px;
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  background: rgba(78, 161, 255, .24);
+  color: var(--text);
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform .08s ease, background .2s ease, border-color .2s ease;
+}
+
+button:hover {
+  background: rgba(78, 161, 255, .32);
+  border-color: rgba(255, 255, 255, .26);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+#message,
+#submit-message {
+  margin-top: 12px;
+  text-align: center;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+/* ===== problemlist list ===== */
+#problemlist {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.problem {
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, .14);
+  background: rgba(255, 255, 255, .06);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .18);
+}
+
+.problem a {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.problem a:hover {
+  color: var(--link2);
+}
+
+.code {
+  font-family: 'Fira Code', monospace;
+  background: rgba(0, 0, 0, .1);
+  padding: 2px 4px;
+  border-radius: 6px;
+  font-size: 90%;
+  background-color: rgba(124, 196, 255, .25);
+}
+
+/* ===== Pagination ===== */
+.pagination {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.pagination a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  background: rgba(255, 255, 255, .06);
+  color: var(--text);
+}
+
+.pagination a:hover {
+  background: rgba(255, 255, 255, .10);
+}
+
+/* ===== Discussion Items ===== */
+.discussion-list {
+  margin-top: 20px;
+  display: grid;
+  gap: 12px;
+}
+
+.discussion-item {
+  padding: 16px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, .14);
+  background: rgba(255, 255, 255, .06);
+  transition: transform 0.2s ease;
+}
+
+.discussion-reply-item {
+  padding: 12px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, .14);
+  background: rgba(255, 255, 255, .04);
+  margin-bottom: 12px;
+}
+
+.discussion-reply-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.discussion-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(124, 196, 255, .3);
+}
+
+.discussion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.discussion-author {
+  font-weight: 700;
+  color: var(--link);
+}
+
+.discussion-reply-author {
+  font-weight: 700;
+  color: var(--link);
+}
+
+.discussion-date {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.discussion-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: var(--text);
+}
+
+.discussion-title a {
+  color: var(--text);
+}
+
+.discussion-title a:hover {
+  color: var(--link2);
+}
+
+.discussion-content {
+  color: var(--muted);
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.discussion-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.discussion-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.discussion-reply-body {
+  color: var(--muted);
+  line-height: 1.6;
+}
