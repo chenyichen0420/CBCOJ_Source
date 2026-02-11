@@ -2,7 +2,7 @@ We're trying to shift the API server from javascript(node.js) to MSVC c++20, all
 
 Most API will have a new format due to "technical" reason(I'm too lazy to implement many types of response).
 
-## Registeration
+## Registeration(Will be disabled for a long time)
 
 ### Generate Register Token
 ```
