@@ -1,5 +1,7 @@
 We're trying to shift the API server from javascript(node.js) to MSVC c++20, all API disabled.
 
+Most API will have a new format due to "technical" reason(I'm too lazy to implement many types of response).
+
 ## Registeration
 
 ### Generate Register Token
