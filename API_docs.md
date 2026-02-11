@@ -2,6 +2,8 @@ We're trying to shift the API server from javascript(node.js) to MSVC c++20, all
 
 Most API will have a new format due to "technical" reason(I'm too lazy to implement many types of response).
 
+Every API returns `application/json` with no exception.
+
 ## Account Management
 
 ### Verify Cookie
