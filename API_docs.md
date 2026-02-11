@@ -15,8 +15,8 @@ Returns:
   ["N",error] - Failure, returns error message.
 Warning:
   A message will be sent to the uid you insert in /genregtoken automatically, including the Register code.
-  All token will be disabled every 5 min.
-  Eg. If you get an register token at 12:54:59, then it will be disabled in 1 second.
+  Token will be disabled after 10 min.
+  Eg. If you get an register token at 12:54:59, then it will be disabled at 13:04:59.
 ```
 
 ### Verify Activate Code
@@ -27,8 +27,6 @@ GET /verifycode
 Returns:
   "Y" - Success
   "N" - Failure
-Warning:
-  Once failed, the token will be unavailable to register.
 ```
 
 ## Account Management
