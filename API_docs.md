@@ -6,6 +6,8 @@ Every API returns `application/json` with no exception.
 
 ## Account Management
 
+Re-Enabled
+
 ### Verify Cookie
 ```
 GET /verifycookie
@@ -65,7 +67,7 @@ Returns:
 
 ### Update User Information
 ```
-POST /updinfo
+POST /updinfoshort
 Body:
 	cookie (string) - Cookie value
 	usrname (string) - Username
