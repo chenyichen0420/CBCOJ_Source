@@ -4,6 +4,10 @@ Most API will have a new format due to "technical" reason(I'm too lazy to implem
 
 Every API returns `application/json` with no exception.
 
+Some API were returning to functioning. Our API website is api.cbcoj.dpdns.org. Our main website **will** be cbcoj.dpdns.org.
+
+Our service will be open from tuesday to saturday every week(**plan, not promise**).
+
 ## Account Management
 
 Re-Enabled
@@ -244,6 +248,8 @@ Returns:
 
 ## Messaging
 
+Re-Enabled
+
 ### Send Message
 ```
 POST /postmsg
@@ -290,6 +296,8 @@ Returns:
 ```
 
 ## Problem
+
+Re-Enabled
 
 ### Get Problem
 ```
@@ -338,7 +346,7 @@ Returns:
 		}
 ```
 
-## Registeration(Will be disabled for a long time, not under maintainance)
+## Registeration
 
 ### Generate Register Token
 ```
