@@ -177,6 +177,8 @@ Returns:
 
 ## Record Management
 
+Re-Enabled
+
 ### Get Record Detail
 ```
 GET /record
@@ -224,6 +226,8 @@ Returns:
 ```
 
 ## Submission
+
+Re-Enabled
 
 ### Submit Code
 ```
