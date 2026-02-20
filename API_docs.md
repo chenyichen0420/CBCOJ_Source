@@ -98,6 +98,7 @@ POST /newdisc
 body:
 	cookie (string) - Cookie value
 	content (string) - Initial content
+	title (string) - Discussion title
 Returns:
 	Success:
 		{
