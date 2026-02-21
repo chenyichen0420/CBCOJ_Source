@@ -92,6 +92,8 @@ Returns:
 
 ## Discussion Management
 
+Re-Enabled
+
 ### Create New Discussion
 ```
 POST /newdisc
