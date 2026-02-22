@@ -1,16 +1,14 @@
-We're trying to shift the API server from javascript(node.js) to MSVC c++20, all API disabled.
+We've shifted the API server from javascript(node.js) to MSVC c++20, all API enabled.
 
 Most API will have a new format due to "technical" reason(I'm too lazy to implement many types of response).
 
 Every API returns `application/json` with no exception.
 
-Some API were returning to functioning. Our API website is api.cbcoj.dpdns.org. Our main website **will** be cbcoj.dpdns.org.
+Some API were returning to functioning. Our API website is `api.cbcoj.dpdns.org`. Our main website is `cbcoj.dpdns.org` or `www.cbcoj.dpdns.org`.
 
 Our service will be open from tuesday to saturday every week(**plan, not promise**).
 
 ## Account Management
-
-Re-Enabled
 
 ### Verify Cookie
 ```
@@ -91,8 +89,6 @@ Returns:
 ```
 
 ## Discussion Management
-
-Re-Enabled
 
 ### Create New Discussion
 ```
@@ -180,8 +176,6 @@ Returns:
 
 ## Record Management
 
-Re-Enabled
-
 ### Get Record Detail
 ```
 GET /record
@@ -230,8 +224,6 @@ Returns:
 
 ## Submission
 
-Re-Enabled
-
 ### Submit Code
 ```
 POST /submit
@@ -254,8 +246,6 @@ Returns:
 ```
 
 ## Messaging
-
-Re-Enabled
 
 ### Send Message
 ```
@@ -303,8 +293,6 @@ Returns:
 ```
 
 ## Problem
-
-Re-Enabled
 
 ### Get Problem
 ```
@@ -362,8 +350,16 @@ GET /genregtoken
 	paswd (string) - Password
 	uid (num) - Luogu user id
 Returns:
-	["Y",token] - Success, returns register token.
-	["N",error] - Failure, returns error message.
+	Success:
+		{
+			"status": "Y",
+			"token": string
+		}
+	Fail:
+		{
+			"status": "N",
+			"error": string
+		}
 Warning:
 	A message will be sent to the uid you insert in /genregtoken automatically, including the Register code.
 	Token will be disabled after 10 min.
@@ -376,8 +372,15 @@ GET /verifycode
 	token (string) - Register Token
 	code (string) - Register Code
 Returns:
-	"Y" - Success
-	"N" - Failure
+	Success:
+		{
+			"status": "Y"
+		}
+	Fail:
+		{
+			"status": "N",
+			"error": string
+		}
 ```
 
 ---
