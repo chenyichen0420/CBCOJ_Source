@@ -128,7 +128,7 @@ const server = http.createServer((req, res) => {
 		}
 	}
 
-	if (consider && pathParts.length === 2) {
+	if (consider && pathParts.length === 2 || pathParts.length >= 2 && pathParts[0] === "problem") {
 		// 匹配 /path1/path2 模式，将其转换为 /path1?id=path2
 		const basePath = pathParts[0];
 		const idValue = pathParts[1];
