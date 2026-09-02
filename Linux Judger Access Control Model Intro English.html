@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="color-scheme" content="light dark">
+    <title>Linux Judger Access Control Model Intro English</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.5.0/github-markdown.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <style>
+        /* ========== 全局主题变量 ========== */
+        :root {
+            color-scheme: light dark;
+            --bg-body: #f6f8fa;
+            --bg-card: #ffffff;
+            --text-primary: #24292f;
+            --text-secondary: #57606a;
+            --border-light: #e1e4e8;
+            --code-bg: #f6f8fa;
+            --code-header-bg: #f1f3f5;
+            --code-header-border: #e1e4e8;
+            --btn-bg: #ffffff;
+            --btn-border: #d0d7de;
+            --btn-hover-bg: #eaeef2;
+            --shadow: 0 1px 4px rgba(0,0,0,0.1);
+            --code-text: #24292f;
+            --line-numbers-color: #8c959f;
+            
+            
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #0d1117;
+                --bg-card: #161b22;
+                --text-primary: #c9d1d9;
+                --text-secondary: #8b949e;
+                --border-light: #30363d;
+                --code-bg: #0d1117;
+                --code-header-bg: #21262d;
+                --code-header-border: #30363d;
+                --btn-bg: #21262d;
+                --btn-border: #30363d;
+                --btn-hover-bg: #30363d;
+                --shadow: 0 1px 4px rgba(0,0,0,0.3);
+                --code-text: #c9d1d9;
+                --line-numbers-color: #8b949e;
+                
+                
+            }
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            padding: 2rem;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+        }
+        
+        
+        .markdown-body {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--bg-card);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+        .markdown-body {
+            color: var(--text-primary) !important;
+        }
+        .code-content pre code,
+        .code-content pre code.hljs {
+            color: var(--code-text) !important;
+            background-color: var(--code-bg) !important;
+        }
+        .line-numbers {
+            color: var(--line-numbers-color) !important;
+            background-color: var(--code-bg) !important;
+        }
+        .code-wrapper {
+            margin: 1rem 0;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border-light);
+        }
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            background-color: var(--code-header-bg);
+            padding: 0.4rem 1rem;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--code-header-border);
+        }
+        .code-lang {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .copy-btn {
+            background-color: var(--btn-bg);
+            border: 1px solid var(--btn-border);
+            border-radius: 6px;
+            padding: 0.2rem 0.6rem;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+        .copy-btn:hover { background-color: var(--btn-hover-bg); }
+        .copy-btn.copied {
+            background: #2cbe4e;
+            border-color: #2cbe4e;
+            color: white;
+        }
+        .code-content pre {
+            margin: 0 !important;
+            border-radius: 0 !important;
+            background-color: var(--code-bg) !important;
+            overflow-x: auto;
+            padding: 10px;
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+        .code-content pre code {
+            padding: 0 !important;
+            tab-size: 4;
+            -moz-tab-size: 4;
+        }
+        .footer {
+            max-width: 1200px;
+            margin: 2rem auto 0;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-light);
+            padding: 1.5rem 0;
+        }
+        .footer a {
+            color: #0969da;
+            text-decoration: none;
+        }
+        .katex-display { overflow-x: auto; }
+        .katex-error {
+            color: #dc2626;
+            background: #fef2f2;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+        }
+        @media (max-width: 768px) {
+            .markdown-body { padding: 1rem; }
+            
+        }
+    </style>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {
+        delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}],
+        ignoredTags: ['pre', 'code', 'script', 'style', 'textarea'],
+        ignoredClasses: ['code-wrapper', 'line-numbers', 'copy-btn']
+    });"></script>
+</head>
+<body>
+<div class="">
+    <div class="main-content">
+        
+        <div class="markdown-body"><h1 id="access-control-model-of-cbcoj-linux-judger">Access Control Model of CBCOJ Linux Judger</h1>
+<p>This document describes the access control model implemented in the CBCOJ judger for Linux kernel 3.5+.</p>
+<hr>
+<h2 id="1-introduction">1. Introduction</h2>
+<p>In online judge (OJ) systems, executing untrusted user-submitted code securely is a fundamental requirement. The evaluation process must prevent malicious programs from damaging the host system, accessing unauthorized resources, or exfiltrating sensitive data. On Linux platforms, common sandboxing approaches include chroot jails, seccomp-bpf, cgroups, namespaces, and Linux Security Modules (LSM).</p>
+<p>This document describes a <strong>three-layer defense-in-depth</strong> access control model built upon:</p>
+<ul>
+<li><strong>chroot jail</strong> – for file system namespace isolation.</li>
+<li><strong>seccomp-bpf system call whitelisting</strong> – for restricting available kernel interfaces.</li>
+<li><strong>setrlimit resource limits</strong> – for CPU time, memory, and file size constraints.</li>
+</ul>
+<p>The model has been validated on Linux kernel 3.5+ with seccomp support, and is suitable for OJ systems or general-purpose secure execution frameworks.</p>
+<hr>
+<h2 id="2-design-objectives">2. Design Objectives</h2>
+<p>The access control model aims to achieve the following goals:</p>
+<table>
+<thead>
+<tr>
+<th>Objective</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>File system isolation</strong></td>
+<td>Confine the process to a restricted directory tree via chroot; prevent access to host system files.</td>
+</tr>
+<tr>
+<td><strong>System call restriction</strong></td>
+<td>Allow only a minimal whitelist of system calls; kill any process attempting disallowed syscalls.</td>
+</tr>
+<tr>
+<td><strong>Resource limits</strong></td>
+<td>Enforce CPU time, virtual memory, and file size limits to prevent resource exhaustion.</td>
+</tr>
+<tr>
+<td><strong>Clean process termination</strong></td>
+<td>Parent process monitors and terminates the child when limits are exceeded.</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="3-architecture-overview">3. Architecture Overview</h2>
+<p>The model consists of three independent protection layers, each enforcing a distinct security boundary:</p>
+<pre><code>┌─────────────────────────────────────────────────────────────────┐
+│  Layer 1: chroot Jail                                         │
+│  - Restrict root directory to the evaluation working directory │
+│  - Effect: Subprocess cannot access files outside the jail    │
+├─────────────────────────────────────────────────────────────────┤
+│  Layer 2: seccomp-bpf System Call Whitelisting                │
+│  - Allow only a pre-approved list of syscalls                 │
+│  - Effect: Fork, socket, mount, chroot, etc. are killed       │
+├─────────────────────────────────────────────────────────────────┤
+│  Layer 3: setrlimit Resource Limits                           │
+│  - RLIMIT_CPU, RLIMIT_AS, RLIMIT_FSIZE                       │
+│  - Effect: CPU time, memory, and file size are capped         │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<p>Each layer operates independently. Even if one layer is somehow bypassed, the others continue to provide protection.</p>
+<hr>
+<h2 id="4-layer-1-chroot-jail">4. Layer 1: chroot Jail</h2>
+<h3 id="41-core-mechanism">4.1 Core Mechanism</h3>
+<p>The <code>chroot()</code> system call changes the root directory of the calling process to a specified path. Once chrooted, the process cannot access any files outside this new root, as all path resolutions are relative to the jail root.</p>
+<p><strong>Implementation flow:</strong></p>
+<ol>
+<li>The parent process forks a child.</li>
+<li>The child calls <code>chroot(path)</code> to set the jail root to the evaluation working directory.</li>
+<li>The child then calls <code>chdir(&quot;/&quot;)</code> to move to the new root.</li>
+<li>All subsequent file operations are confined to the jail.</li>
+</ol>
+<h3 id="42-key-constants-and-structures">4.2 Key Constants and Structures</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>chroot</code></td>
+<td>System call to change the root directory</td>
+</tr>
+<tr>
+<td><code>chdir</code></td>
+<td>System call to change the current working directory</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td>Evaluation working directory path (the jail root)</td>
+</tr>
+</tbody></table>
+<h3 id="43-key-api-functions">4.3 Key API Functions</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>fork</code></td>
+<td>Create a child process for isolation</td>
+</tr>
+<tr>
+<td><code>chroot</code></td>
+<td>Restrict root directory to the jail path</td>
+</tr>
+<tr>
+<td><code>chdir</code></td>
+<td>Change working directory to the new root</td>
+</tr>
+<tr>
+<td><code>execl</code></td>
+<td>Execute the evaluated program inside the jail</td>
+</tr>
+</tbody></table>
+<h3 id="44-effect">4.4 Effect</h3>
+<ul>
+<li>The child process <strong>cannot</strong> access files outside the evaluation working directory.</li>
+<li>System files (<code>/etc</code>, <code>/usr</code>, <code>/bin</code>, etc.) are <strong>inaccessible</strong> to the evaluated program.</li>
+<li>The program can only read input files and write output files within the jail.</li>
+</ul>
+<hr>
+<h2 id="5-layer-2-seccomp-bpf-system-call-whitelisting">5. Layer 2: seccomp-bpf System Call Whitelisting</h2>
+<h3 id="51-why-seccomp">5.1 Why seccomp?</h3>
+<p>Seccomp (Secure Computing Mode) allows a process to restrict the system calls it can make. Without seccomp, a malicious program could:</p>
+<ul>
+<li>Fork bomb the system (<code>fork</code>, <code>clone</code>).</li>
+<li>Create network sockets (<code>socket</code>, <code>connect</code>) to exfiltrate data.</li>
+<li>Modify the system (<code>mount</code>, <code>reboot</code>, <code>chroot</code>).</li>
+<li>Create new processes (<code>execve</code>, <code>execveat</code>).</li>
+</ul>
+<p>The model uses <strong>libseccomp</strong> to install a <strong>system call whitelist</strong>, allowing only the minimal set required for normal program execution.</p>
+<h3 id="52-the-system-call-whitelist">5.2 The System Call Whitelist</h3>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Allowed Syscalls</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>File operations</strong></td>
+<td><code>stat</code>, <code>lstat</code>, <code>newfstatat</code>, <code>openat</code>, <code>read</code>, <code>write</code>, <code>lseek</code>, <code>readlink</code>, <code>readlinkat</code>, <code>access</code></td>
+</tr>
+<tr>
+<td><strong>Memory management</strong></td>
+<td><code>brk</code>, <code>mmap</code>, <code>munmap</code>, <code>mprotect</code></td>
+</tr>
+<tr>
+<td><strong>Process management</strong></td>
+<td><code>exit</code>, <code>exit_group</code>, <code>execve</code>, <code>execveat</code></td>
+</tr>
+<tr>
+<td><strong>Signal handling</strong></td>
+<td><code>rt_sigprocmask</code>, <code>rt_sigaction</code>, <code>rt_sigreturn</code>, <code>sigaltstack</code></td>
+</tr>
+<tr>
+<td><strong>Time / random</strong></td>
+<td><code>clock_gettime</code>, <code>clock_getres</code>, <code>gettimeofday</code>, <code>getrandom</code></td>
+</tr>
+<tr>
+<td><strong>File descriptors</strong></td>
+<td><code>dup</code>, <code>dup2</code>, <code>dup3</code>, <code>fstat</code>, <code>futex</code></td>
+</tr>
+<tr>
+<td><strong>Other basic</strong></td>
+<td><code>getpid</code>, <code>getppid</code>, <code>uname</code>, <code>getrlimit</code>, <code>prlimit64</code></td>
+</tr>
+</tbody></table>
+<p><strong>Syscalls that are explicitly killed include but are not limited to:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Disallowed Syscall</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>fork</code></td>
+<td>Prevent process creation</td>
+</tr>
+<tr>
+<td><code>vfork</code></td>
+<td>Prevent process creation</td>
+</tr>
+<tr>
+<td><code>clone</code></td>
+<td>Prevent thread/process creation</td>
+</tr>
+<tr>
+<td><code>socket</code></td>
+<td>Prevent network access</td>
+</tr>
+<tr>
+<td><code>socketpair</code></td>
+<td>Prevent network access</td>
+</tr>
+<tr>
+<td><code>pipe</code> / <code>pipe2</code></td>
+<td>Prevent IPC creation</td>
+</tr>
+<tr>
+<td><code>chdir</code> / <code>fchdir</code></td>
+<td>Prevent directory escape</td>
+</tr>
+<tr>
+<td><code>chroot</code> / <code>pivot_root</code></td>
+<td>Prevent jail escape</td>
+</tr>
+<tr>
+<td><code>mount</code> / <code>umount</code> / <code>umount2</code></td>
+<td>Prevent file system modification</td>
+</tr>
+<tr>
+<td><code>ptrace</code></td>
+<td>Prevent debugging</td>
+</tr>
+<tr>
+<td><code>setuid</code> / <code>setgid</code> / <code>capset</code></td>
+<td>Prevent privilege escalation</td>
+</tr>
+<tr>
+<td><code>reboot</code></td>
+<td>Prevent system shutdown</td>
+</tr>
+<tr>
+<td><code>msgget</code> / <code>shmget</code> / <code>semget</code></td>
+<td>Prevent inter-process communication</td>
+</tr>
+</tbody></table>
+<h3 id="53-key-constants-and-structures">5.3 Key Constants and Structures</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>scmp_filter_ctx</code></td>
+<td>libseccomp filter context</td>
+</tr>
+<tr>
+<td><code>SCMP_ACT_ALLOW</code></td>
+<td>seccomp action: allow the syscall</td>
+</tr>
+<tr>
+<td><code>SCMP_ACT_KILL</code></td>
+<td>seccomp action: kill the process</td>
+</tr>
+<tr>
+<td><code>SCMP_SYS(name)</code></td>
+<td>Macro to specify a system call by name</td>
+</tr>
+</tbody></table>
+<h3 id="54-key-api-functions">5.4 Key API Functions</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>seccomp_init</code></td>
+<td>Initialize a seccomp filter context (default action: <code>SCMP_ACT_KILL</code>)</td>
+</tr>
+<tr>
+<td><code>seccomp_rule_add</code></td>
+<td>Add a rule to allow a specific syscall</td>
+</tr>
+<tr>
+<td><code>seccomp_load</code></td>
+<td>Load the filter into the kernel</td>
+</tr>
+<tr>
+<td><code>seccomp_release</code></td>
+<td>Release the filter context</td>
+</tr>
+</tbody></table>
+<h3 id="55-effect">5.5 Effect</h3>
+<ul>
+<li>The child process <strong>cannot</strong> create additional processes (<code>fork</code>, <code>clone</code>, <code>vfork</code>).</li>
+<li>The child process <strong>cannot</strong> establish network connections (<code>socket</code>, <code>connect</code>).</li>
+<li>The child process <strong>cannot</strong> escape the jail (<code>chroot</code>, <code>pivot_root</code>, <code>mount</code>).</li>
+<li>The child process <strong>cannot</strong> escalate privileges (<code>setuid</code>, <code>setgid</code>, <code>capset</code>).</li>
+<li>The child process <strong>can</strong> perform basic file I/O, memory allocation, and normal program execution.</li>
+</ul>
+<hr>
+<h2 id="6-layer-3-setrlimit-resource-limits">6. Layer 3: setrlimit Resource Limits</h2>
+<h3 id="61-core-mechanism">6.1 Core Mechanism</h3>
+<p><code>setrlimit()</code> sets resource limits on the calling process. The model applies three limits before executing the evaluated program.</p>
+<h3 id="62-resource-limits">6.2 Resource Limits</h3>
+<table>
+<thead>
+<tr>
+<th>Limit</th>
+<th>Macro</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Virtual memory (address space)</strong></td>
+<td><code>RLIMIT_AS</code></td>
+<td><code>meml * 1024 * 1024</code> (configurable memory limit in bytes)</td>
+</tr>
+<tr>
+<td><strong>File size (output)</strong></td>
+<td><code>RLIMIT_FSIZE</code></td>
+<td>256 MiB (prevents unlimited output files)</td>
+</tr>
+<tr>
+<td><strong>CPU time</strong></td>
+<td><code>RLIMIT_CPU</code></td>
+<td><code>(timl + 2999) / 1000</code> (configurable CPU time limit in seconds)</td>
+</tr>
+</tbody></table>
+<p><strong>Note:</strong> The CPU time limit is specified in <strong>seconds</strong> (<code>timl</code> is in milliseconds, so it is rounded up to the nearest second).</p>
+<h3 id="63-key-constants-and-structures">6.3 Key Constants and Structures</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>RLIMIT_AS</code></td>
+<td>Address space (virtual memory) limit</td>
+</tr>
+<tr>
+<td><code>RLIMIT_FSIZE</code></td>
+<td>Maximum file size that can be created</td>
+</tr>
+<tr>
+<td><code>RLIMIT_CPU</code></td>
+<td>CPU time limit in seconds</td>
+</tr>
+<tr>
+<td><code>struct rlimit</code></td>
+<td>Structure containing <code>rlim_cur</code> (soft limit) and <code>rlim_max</code> (hard limit)</td>
+</tr>
+</tbody></table>
+<h3 id="64-key-api-functions">6.4 Key API Functions</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>setrlimit</code></td>
+<td>Set resource limits for the current process</td>
+</tr>
+<tr>
+<td><code>getrlimit</code></td>
+<td>Get current resource limits</td>
+</tr>
+<tr>
+<td><code>sysconf(_SC_CLK_TCK)</code></td>
+<td>Get system ticks per second for CPU time calculation</td>
+</tr>
+</tbody></table>
+<h3 id="65-effect">6.5 Effect</h3>
+<ul>
+<li>The process is <strong>terminated</strong> if it exceeds the memory limit.</li>
+<li>The process is <strong>terminated</strong> if it exceeds the CPU time limit.</li>
+<li>The process <strong>cannot</strong> write more than 256 MiB of data.</li>
+<li>Resource exhaustion attacks (fork bombs, memory bombs, infinite loops) are prevented.</li>
+</ul>
+<hr>
+<h2 id="7-integration-and-interaction">7. Integration and Interaction</h2>
+<h3 id="71-prerequisites">7.1 Prerequisites</h3>
+<p>The evaluating process must run with sufficient privileges:</p>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Root privileges</strong></td>
+<td><code>chroot</code> requires <code>CAP_SYS_CHROOT</code> capability. The main program automatically re-executes itself with <code>sudo</code> if not running as root.</td>
+</tr>
+<tr>
+<td><strong>libseccomp</strong></td>
+<td>The seccomp filter requires the <code>libseccomp-dev</code> package.</td>
+</tr>
+<tr>
+<td><strong>Linux kernel 3.5+</strong></td>
+<td>Seccomp-bpf support is required (kernel 3.5+; full support in 3.19+).</td>
+</tr>
+</tbody></table>
+<h3 id="72-synchronization-pipe">7.2 Synchronization Pipe</h3>
+<p>A synchronization pipe (<code>pipe2</code> with <code>O_CLOEXEC</code>) is used to ensure the parent process only starts monitoring after the child has successfully executed <code>execve</code>. This prevents race conditions where the parent might read process statistics before the child is fully initialized.</p>
+<p><strong>Flow:</strong></p>
+<ol>
+<li>Parent creates a pipe.</li>
+<li>Child closes the read end.</li>
+<li>Child calls <code>execve</code>.</li>
+<li>If <code>execve</code> succeeds, the pipe is automatically closed (due to <code>O_CLOEXEC</code>).</li>
+<li>Parent&#39;s <code>read()</code> on the pipe returns EOF, indicating the child is ready.</li>
+<li>Parent begins monitoring CPU and memory usage.</li>
+</ol>
+<h3 id="73-process-monitoring">7.3 Process Monitoring</h3>
+<p>The parent process monitors the child by:</p>
+<ol>
+<li>Reading <code>/proc/[pid]/stat</code> to track CPU time.</li>
+<li>Reading <code>/proc/[pid]/status</code> to track peak virtual memory (<code>VmPeak</code>).</li>
+<li>Terminating the child if limits are exceeded.</li>
+<li>Reaping the child with <code>waitpid</code>.</li>
+</ol>
+<h3 id="74-exit-code-handling">7.4 Exit Code Handling</h3>
+<p>The model distinguishes between:</p>
+<ul>
+<li><strong>Normal exit</strong>: The program terminated cleanly with exit code 0.</li>
+<li><strong>Time limit exceeded</strong>: CPU time &gt; limit.</li>
+<li><strong>Memory limit exceeded</strong>: Peak memory &gt; limit.</li>
+<li><strong>Runtime error</strong>: Abnormal exit (crash, signal, etc.).</li>
+<li><strong>System error</strong>: chroot or seccomp setup failed.</li>
+</ul>
+<hr>
+<h2 id="8-known-limitations-and-risk-assessment">8. Known Limitations and Risk Assessment</h2>
+<table>
+<thead>
+<tr>
+<th>Limitation</th>
+<th>Risk Level</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>chroot escape via /proc</strong> – <code>/proc</code> may still be accessible inside the jail</td>
+<td>Medium</td>
+<td>seccomp restricts <code>openat</code> and other proc-related syscalls; consider mounting a minimal <code>/proc</code> or using <code>pivot_root</code>.</td>
+</tr>
+<tr>
+<td><strong>Privilege requirements</strong> – program must run as root</td>
+<td>Medium</td>
+<td>Root is required for <code>chroot</code>. The program handles <code>sudo</code> automatically but this widens the attack surface.</td>
+</tr>
+<tr>
+<td><strong>Side-channel attacks</strong> – Spectre/Meltdown-class vulnerabilities</td>
+<td>Medium</td>
+<td>Standard kernel patching and CPU microcode updates are recommended.</td>
+</tr>
+<tr>
+<td><strong>libseccomp dependency</strong> – program cannot run without it</td>
+<td>Low</td>
+<td>Ensure <code>libseccomp-dev</code> is installed on all evaluation nodes.</td>
+</tr>
+<tr>
+<td><strong>Kernel vulnerabilities</strong> – user-mode isolation cannot prevent kernel exploits</td>
+<td>Medium</td>
+<td>Regular kernel updates and OS hardening are recommended.</td>
+</tr>
+<tr>
+<td><strong>Time measurement</strong> – <code>sysconf(_SC_CLK_TCK)</code> used for CPU time</td>
+<td>Low</td>
+<td>Accurate enough for OJ purposes; jitter is minimal.</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="9-summary">9. Summary</h2>
+<p>The Linux evaluation sandbox access control model presented here employs <strong>three independent layers of defense</strong>:</p>
+<ol>
+<li><strong>chroot jail</strong> – ensures file system isolation.</li>
+<li><strong>seccomp-bpf system call whitelisting</strong> – restricts available kernel interfaces.</li>
+<li><strong>setrlimit resource limits</strong> – enforces CPU time, memory, and file size constraints.</li>
+</ol>
+<p>Together, these mechanisms provide a robust, maintainable, and future-proof security boundary for executing untrusted code in OJ environments and similar use cases.</p>
+<h3 id="91-key-function-reference">9.1 Key Function Reference</h3>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Key Functions</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Process creation</td>
+<td><code>fork</code>, <code>execve</code>, <code>waitpid</code></td>
+</tr>
+<tr>
+<td>chroot jail</td>
+<td><code>chroot</code>, <code>chdir</code></td>
+</tr>
+<tr>
+<td>seccomp</td>
+<td><code>seccomp_init</code>, <code>seccomp_rule_add</code>, <code>seccomp_load</code>, <code>seccomp_release</code></td>
+</tr>
+<tr>
+<td>Resource limits</td>
+<td><code>setrlimit</code>, <code>getrlimit</code></td>
+</tr>
+<tr>
+<td>Process monitoring</td>
+<td><code>read</code> (/proc files), <code>waitpid</code>, <code>kill</code></td>
+</tr>
+<tr>
+<td>Synchronization</td>
+<td><code>pipe2</code>, <code>read</code>, <code>close</code></td>
+</tr>
+</tbody></table>
+<h3 id="92-key-constant-reference">9.2 Key Constant Reference</h3>
+<table>
+<thead>
+<tr>
+<th>Constant</th>
+<th>Header / Source</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>RLIMIT_AS</code></td>
+<td>sys/resource.h</td>
+<td>Address space (memory) limit</td>
+</tr>
+<tr>
+<td><code>RLIMIT_FSIZE</code></td>
+<td>sys/resource.h</td>
+<td>File size limit</td>
+</tr>
+<tr>
+<td><code>RLIMIT_CPU</code></td>
+<td>sys/resource.h</td>
+<td>CPU time limit</td>
+</tr>
+<tr>
+<td><code>SCMP_ACT_ALLOW</code></td>
+<td>seccomp.h</td>
+<td>seccomp action: allow syscall</td>
+</tr>
+<tr>
+<td><code>SCMP_ACT_KILL</code></td>
+<td>seccomp.h</td>
+<td>seccomp action: kill process</td>
+</tr>
+<tr>
+<td><code>O_CLOEXEC</code></td>
+<td>fcntl.h</td>
+<td>Pipe flag: close on exec</td>
+</tr>
+</tbody></table>
+<hr>
+<p><em>Document version: 1.0</em></p>
+<p><em>Last updated: 2026.08.30</em></p>
+<h2 id="copyright">Copyright</h2>
+<p>© 2026 <strong>chenyichen0420</strong> (<a href="mailto:18190772965@163.com">18190772965@163.com</a>). All rights reserved.  </p>
+<p>This document and the described access control model are proprietary and confidential. Unauthorized reproduction, distribution, or use without prior written permission is strictly prohibited.</p>
+</div>
+        <div class="footer">
+            <p>© 2026 · 本文采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议</p>
+        </div>
+    </div>
+    
+</div>
+<script>
+(function() {
+    // 复制按钮
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const code = btn.getAttribute('data-code');
+            if (code) {
+                await navigator.clipboard.writeText(code);
+                const orig = btn.textContent;
+                btn.textContent = '已复制！';
+                btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+            }
+        });
+    });
+    
+    
+})();
+</script>
+</body>
+</html>

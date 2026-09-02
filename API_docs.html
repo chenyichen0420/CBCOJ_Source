@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="color-scheme" content="light dark">
+    <title>API_docs</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.5.0/github-markdown.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <style>
+        /* ========== 全局主题变量 ========== */
+        :root {
+            color-scheme: light dark;
+            --bg-body: #f6f8fa;
+            --bg-card: #ffffff;
+            --text-primary: #24292f;
+            --text-secondary: #57606a;
+            --border-light: #e1e4e8;
+            --code-bg: #f6f8fa;
+            --code-header-bg: #f1f3f5;
+            --code-header-border: #e1e4e8;
+            --btn-bg: #ffffff;
+            --btn-border: #d0d7de;
+            --btn-hover-bg: #eaeef2;
+            --shadow: 0 1px 4px rgba(0,0,0,0.1);
+            --code-text: #24292f;
+            --line-numbers-color: #8c959f;
+            
+            
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-body: #0d1117;
+                --bg-card: #161b22;
+                --text-primary: #c9d1d9;
+                --text-secondary: #8b949e;
+                --border-light: #30363d;
+                --code-bg: #0d1117;
+                --code-header-bg: #21262d;
+                --code-header-border: #30363d;
+                --btn-bg: #21262d;
+                --btn-border: #30363d;
+                --btn-hover-bg: #30363d;
+                --shadow: 0 1px 4px rgba(0,0,0,0.3);
+                --code-text: #c9d1d9;
+                --line-numbers-color: #8b949e;
+                
+                
+            }
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            padding: 2rem;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+        }
+        
+        
+        .markdown-body {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--bg-card);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+        .markdown-body {
+            color: var(--text-primary) !important;
+        }
+        .code-content pre code,
+        .code-content pre code.hljs {
+            color: var(--code-text) !important;
+            background-color: var(--code-bg) !important;
+        }
+        .line-numbers {
+            color: var(--line-numbers-color) !important;
+            background-color: var(--code-bg) !important;
+        }
+        .code-wrapper {
+            margin: 1rem 0;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border-light);
+        }
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            background-color: var(--code-header-bg);
+            padding: 0.4rem 1rem;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--code-header-border);
+        }
+        .code-lang {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .copy-btn {
+            background-color: var(--btn-bg);
+            border: 1px solid var(--btn-border);
+            border-radius: 6px;
+            padding: 0.2rem 0.6rem;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+        .copy-btn:hover { background-color: var(--btn-hover-bg); }
+        .copy-btn.copied {
+            background: #2cbe4e;
+            border-color: #2cbe4e;
+            color: white;
+        }
+        .code-content pre {
+            margin: 0 !important;
+            border-radius: 0 !important;
+            background-color: var(--code-bg) !important;
+            overflow-x: auto;
+            padding: 10px;
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+        .code-content pre code {
+            padding: 0 !important;
+            tab-size: 4;
+            -moz-tab-size: 4;
+        }
+        .footer {
+            max-width: 1200px;
+            margin: 2rem auto 0;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-light);
+            padding: 1.5rem 0;
+        }
+        .footer a {
+            color: #0969da;
+            text-decoration: none;
+        }
+        .katex-display { overflow-x: auto; }
+        .katex-error {
+            color: #dc2626;
+            background: #fef2f2;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+        }
+        @media (max-width: 768px) {
+            .markdown-body { padding: 1rem; }
+            
+        }
+    </style>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, {
+        delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}],
+        ignoredTags: ['pre', 'code', 'script', 'style', 'textarea'],
+        ignoredClasses: ['code-wrapper', 'line-numbers', 'copy-btn']
+    });"></script>
+</head>
+<body>
+<div class="">
+    <div class="main-content">
+        
+        <div class="markdown-body"><p>We&#39;ve shifted the API server from javascript(node.js) to MSVC c++20, all API enabled.</p>
+<p>Most API will have a new format due to &quot;technical&quot; reason(I&#39;m too lazy to implement many types of response).</p>
+<p>Every API returns <code>application/json</code> with no exception.</p>
+<p>Some API were returning to functioning. Our API website is <code>api.cbcoj.dpdns.org</code>. Our main website is <code>cbcoj.dpdns.org</code> or <code>www.cbcoj.dpdns.org</code>.</p>
+<p>Our service will be open from tuesday to saturday every week(<strong>plan, not promise</strong>).</p>
+<h2 id="account-management">Account Management</h2>
+<h3 id="verify-cookie">Verify Cookie</h3>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">TXT</span>
+    <button class="copy-btn" data-code="GET /verifycookie
+Parameters:
+	cookie (string) - Cookie value
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-txt">GET /verifycookie
+Parameters:
+	cookie (string) - Cookie value
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+</code></pre>
+</div>
+</div>
+<h3 id="login">Login</h3>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">TXT</span>
+    <button class="copy-btn" data-code="GET /login
+Parameters:
+	usrname (string) - Username
+	paswd (string) - Password
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;cookie&quot;: string
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-txt">GET /login
+Parameters:
+	usrname (string) - Username
+	paswd (string) - Password
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;cookie&quot;: string
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+</code></pre>
+</div>
+</div>
+<h3 id="get-short-user-information">Get Short User Information</h3>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">TXT</span>
+    <button class="copy-btn" data-code="GET /getinfoshort
+Parameters:
+	key (string) - Key value, uid, username or cookie.
+Returns:
+	Success:
+		{
+			&quot;status&quot;:&quot;Y&quot;,
+			&quot;uid&quot;: num,
+			&quot;username&quot;: string,
+			&quot;publiccode&quot;: bool,
+			&quot;slogan&quot;: string
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: String
+		}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-txt">GET /getinfoshort
+Parameters:
+	key (string) - Key value, uid, username or cookie.
+Returns:
+	Success:
+		{
+			&quot;status&quot;:&quot;Y&quot;,
+			&quot;uid&quot;: num,
+			&quot;username&quot;: string,
+			&quot;publiccode&quot;: bool,
+			&quot;slogan&quot;: string
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: String
+		}
+</code></pre>
+</div>
+</div>
+<h3 id="update-user-information">Update User Information</h3>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">TXT</span>
+    <button class="copy-btn" data-code="POST /updinfoshort
+Body:
+	cookie (string) - Cookie value
+	usrname (string) - Username
+	paswd (string) - Password
+	pubcode (string) - Public code
+	slogan (string) - Slogan
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-txt">POST /updinfoshort
+Body:
+	cookie (string) - Cookie value
+	usrname (string) - Username
+	paswd (string) - Password
+	pubcode (string) - Public code
+	slogan (string) - Slogan
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+</code></pre>
+</div>
+</div>
+<h2 id="discussion-management">Discussion Management</h2>
+<h3 id="create-new-discussion">Create New Discussion</h3>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">TXT</span>
+    <button class="copy-btn" data-code="POST /newdisc
+body:
+	cookie (string) - Cookie value
+	content (string) - Initial content
+	title (string) - Discussion title
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;cid&quot;: string
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-txt">POST /newdisc
+body:
+	cookie (string) - Cookie value
+	content (string) - Initial content
+	title (string) - Discussion title
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;cid&quot;: string
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+</code></pre>
+</div>
+</div>
+<h3 id="post-discussion-message">Post Discussion Message</h3>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">TXT</span>
+    <button class="copy-btn" data-code="POST /postdisc
+Body:
+	cookie (string) - Cookie value
+	content (string) - Discussion content
+	cid (string) - Discussion ID
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-txt">POST /postdisc
+Body:
+	cookie (string) - Cookie value
+	content (string) - Discussion content
+	cid (string) - Discussion ID
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+</code></pre>
+</div>
+</div>
+<h3 id="get-discussion-history">Get Discussion History</h3>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">TXT</span>
+    <button class="copy-btn" data-code="GET /getdisc
+Parameters:
+	cookie (string) - Cookie value
+	cid (string) - Discussion ID
+	page (num) - Page number
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;msglist&quot;: [
+				{
+					&quot;uid&quot;:num,
+					&quot;msg&quot;:string
+				},
+				....
+			],
+			&quot;page&quot;: num
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-txt">GET /getdisc
+Parameters:
+	cookie (string) - Cookie value
+	cid (string) - Discussion ID
+	page (num) - Page number
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;msglist&quot;: [
+				{
+					&quot;uid&quot;:num,
+					&quot;msg&quot;:string
+				},
+				....
+			],
+			&quot;page&quot;: num
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+</code></pre>
+</div>
+</div>
+<h3 id="get-recent-discussion-list">Get Recent Discussion List</h3>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">TXT</span>
+    <button class="copy-btn" data-code="GET /getdisclist
+Parameters:
+	nothing
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;cidlist&quot;: [string list]
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-txt">GET /getdisclist
+Parameters:
+	nothing
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;cidlist&quot;: [string list]
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+</code></pre>
+</div>
+</div>
+<h2 id="record-management">Record Management</h2>
+<h3 id="get-record-detail">Get Record Detail</h3>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">TXT</span>
+    <button class="copy-btn" data-code="GET /record
+Parameters:
+	cookie (string) - Cookie value
+	rid (string) - Record ID
+Returns:
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+	Success(judge mission unfinished):
+		{
+			&quot;status&quot;: &quot;P&quot;,
+			&quot;result&quot;: JSON
+		}
+	Success(judge mission finished):
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;result&quot;: JSON,
+			&quot;code&quot;: string
+		}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-txt">GET /record
+Parameters:
+	cookie (string) - Cookie value
+	rid (string) - Record ID
+Returns:
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+	Success(judge mission unfinished):
+		{
+			&quot;status&quot;: &quot;P&quot;,
+			&quot;result&quot;: JSON
+		}
+	Success(judge mission finished):
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;result&quot;: JSON,
+			&quot;code&quot;: string
+		}
+</code></pre>
+</div>
+</div>
+<h3 id="get-record-list">Get Record List</h3>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">TXT</span>
+    <button class="copy-btn" data-code="GET /recordlist
+Parameters:
+	cookie (string) - Cookie value
+	target (string) - Target user/filter condition
+	page (num) - Page number
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;ridlist&quot;: [string list],
+			&quot;page&quot;: num
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-txt">GET /recordlist
+Parameters:
+	cookie (string) - Cookie value
+	target (string) - Target user/filter condition
+	page (num) - Page number
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;ridlist&quot;: [string list],
+			&quot;page&quot;: num
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+</code></pre>
+</div>
+</div>
+<h2 id="submission">Submission</h2>
+<h3 id="submit-code">Submit Code</h3>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">TXT</span>
+    <button class="copy-btn" data-code="POST /submit
+Request Body:
+	cookie (string) - Cookie value
+	pid (string) - Problem ID
+	lan (string) - Programming language
+	code (string) - Code content
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;rid&quot;: string
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-txt">POST /submit
+Request Body:
+	cookie (string) - Cookie value
+	pid (string) - Problem ID
+	lan (string) - Programming language
+	code (string) - Code content
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;rid&quot;: string
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+</code></pre>
+</div>
+</div>
+<h2 id="messaging">Messaging</h2>
+<h3 id="send-message">Send Message</h3>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">TXT</span>
+    <button class="copy-btn" data-code="POST /postmsg
+Body:
+	cookie (string) - Cookie value
+	target (string) - Target user
+	content (string) - Message content
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-txt">POST /postmsg
+Body:
+	cookie (string) - Cookie value
+	target (string) - Target user
+	content (string) - Message content
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+</code></pre>
+</div>
+</div>
+<h3 id="get-message">Get Message</h3>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">TXT</span>
+    <button class="copy-btn" data-code="GET /getmsg
+Parameters:
+	cookie (string) - Cookie value
+	page (num) - Page number
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;msglist&quot;: [
+				{
+					&quot;uid&quot;:num,
+					&quot;msg&quot;:string
+				},
+				....
+			],
+			&quot;page&quot;: num
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-txt">GET /getmsg
+Parameters:
+	cookie (string) - Cookie value
+	page (num) - Page number
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;msglist&quot;: [
+				{
+					&quot;uid&quot;:num,
+					&quot;msg&quot;:string
+				},
+				....
+			],
+			&quot;page&quot;: num
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+</code></pre>
+</div>
+</div>
+<h2 id="problem">Problem</h2>
+<h3 id="get-problem">Get Problem</h3>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">TXT</span>
+    <button class="copy-btn" data-code="GET /getproblem
+Parameters:
+	pid (string) - Problem ID
+Returns:
+	JSON (fully user-defined value)
+	*** Webpage recognizes following structure:
+	{
+		&quot;title&quot;:string,
+		&quot;background&quot;:string,
+		&quot;description&quot;:string,
+		&quot;inputfmt&quot;:string,
+		&quot;outputfmt&quot;:string,
+		&quot;sample&quot;:[
+			{
+			&quot;input&quot;: string,
+			&quot;output&quot;: string
+			},
+			...
+		],
+		&quot;hint&quot;:string,
+		&quot;timelm&quot;:num,
+		&quot;memlm&quot;:num
+	}
+	note that &quot;timelm&quot; stands for time limit in ms, &quot;memlm&quot; stands for memory limit in MiB.
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-txt">GET /getproblem
+Parameters:
+	pid (string) - Problem ID
+Returns:
+	JSON (fully user-defined value)
+	*** Webpage recognizes following structure:
+	{
+		&quot;title&quot;:string,
+		&quot;background&quot;:string,
+		&quot;description&quot;:string,
+		&quot;inputfmt&quot;:string,
+		&quot;outputfmt&quot;:string,
+		&quot;sample&quot;:[
+			{
+			&quot;input&quot;: string,
+			&quot;output&quot;: string
+			},
+			...
+		],
+		&quot;hint&quot;:string,
+		&quot;timelm&quot;:num,
+		&quot;memlm&quot;:num
+	}
+	note that &quot;timelm&quot; stands for time limit in ms, &quot;memlm&quot; stands for memory limit in MiB.
+</code></pre>
+</div>
+</div>
+<h3 id="get-problem-list">Get Problem List</h3>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">TXT</span>
+    <button class="copy-btn" data-code="GET /getproblemlist
+Parameters:
+	page (num) - Page number
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;pidlist&quot;: [string list],
+			&quot;count&quot;: num
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-txt">GET /getproblemlist
+Parameters:
+	page (num) - Page number
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;pidlist&quot;: [string list],
+			&quot;count&quot;: num
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+</code></pre>
+</div>
+</div>
+<h2 id="registeration">Registeration</h2>
+<h3 id="generate-register-token">Generate Register Token</h3>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">TXT</span>
+    <button class="copy-btn" data-code="GET /genregtoken
+	usrname (string) - Username
+	paswd (string) - Password
+	uid (num) - Luogu user id
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;token&quot;: string
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+Warning:
+	A message will be sent to the uid you insert in /genregtoken automatically, including the Register code.
+	Token will be disabled after 10 min.
+	Eg. If you get an register token at 12:54:59, then it will be disabled at 13:04:59.
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-txt">GET /genregtoken
+	usrname (string) - Username
+	paswd (string) - Password
+	uid (num) - Luogu user id
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;,
+			&quot;token&quot;: string
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+Warning:
+	A message will be sent to the uid you insert in /genregtoken automatically, including the Register code.
+	Token will be disabled after 10 min.
+	Eg. If you get an register token at 12:54:59, then it will be disabled at 13:04:59.
+</code></pre>
+</div>
+</div>
+<h3 id="verify-activate-code">Verify Activate Code</h3>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">TXT</span>
+    <button class="copy-btn" data-code="GET /verifycode
+	token (string) - Register Token
+	code (string) - Register Code
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-txt">GET /verifycode
+	token (string) - Register Token
+	code (string) - Register Code
+Returns:
+	Success:
+		{
+			&quot;status&quot;: &quot;Y&quot;
+		}
+	Fail:
+		{
+			&quot;status&quot;: &quot;N&quot;,
+			&quot;error&quot;: string
+		}
+</code></pre>
+</div>
+</div>
+<hr>
+<p><strong>Notes:</strong>  </p>
+<ol>
+<li>All parameters are required  s</li>
+<li>When return value is an array, the first element indicates success/failure status  </li>
+<li>All endpoints require a valid Cookie value (except /login)  </li>
+<li>Page numbers start from 1  </li>
+<li>If there&#39;s a conflict with the source code, refer to the code.  </li>
+<li>Result value mapping chart:</li>
+</ol>
+<div class="code-wrapper">
+<div class="code-header">
+    <span class="code-lang">CPP</span>
+    <button class="copy-btn" data-code="constexpr int
+	JS_IQ = 202,
+	JS_CJ = 206,
+	JS_AC = 200,
+	JS_RJ = 403,
+	JS_NE = 404,
+	JS_CE = 400,
+	JS_TE = 408,
+	JS_ME = 413,
+	JS_RE = 502,
+	JS_WA = 406,
+	JS_SE = 500;
+constexpr char
+	SN_IQ = 'I', //in queue
+	SN_CJ = 'J', //currently judging
+	SN_AC = 'A', //accepted
+	SN_RJ = 'B', //rejected(ban/ignored)
+	SN_NE = 'N', //Problem DNE
+	SN_CE = 'C', //compile error
+	SN_TE = 'T', //time limit exceeded
+	SN_ME = 'M', //memory limit exceeded
+	SN_RE = 'R', //runtime error
+	SN_WA = 'W', //wrong answer
+	SN_SE = 'S', //acceptable system error
+	SN_SCE = 'E'; //system critical error
+">复制</button>
+</div>
+<div class="code-content">
+    <pre><code class="hljs language-cpp"><span class="hljs-keyword">constexpr</span> <span class="hljs-type">int</span>
+	JS_IQ = <span class="hljs-number">202</span>,
+	JS_CJ = <span class="hljs-number">206</span>,
+	JS_AC = <span class="hljs-number">200</span>,
+	JS_RJ = <span class="hljs-number">403</span>,
+	JS_NE = <span class="hljs-number">404</span>,
+	JS_CE = <span class="hljs-number">400</span>,
+	JS_TE = <span class="hljs-number">408</span>,
+	JS_ME = <span class="hljs-number">413</span>,
+	JS_RE = <span class="hljs-number">502</span>,
+	JS_WA = <span class="hljs-number">406</span>,
+	JS_SE = <span class="hljs-number">500</span>;
+<span class="hljs-keyword">constexpr</span> <span class="hljs-type">char</span>
+	SN_IQ = <span class="hljs-string">&#x27;I&#x27;</span>, <span class="hljs-comment">//in queue</span>
+	SN_CJ = <span class="hljs-string">&#x27;J&#x27;</span>, <span class="hljs-comment">//currently judging</span>
+	SN_AC = <span class="hljs-string">&#x27;A&#x27;</span>, <span class="hljs-comment">//accepted</span>
+	SN_RJ = <span class="hljs-string">&#x27;B&#x27;</span>, <span class="hljs-comment">//rejected(ban/ignored)</span>
+	SN_NE = <span class="hljs-string">&#x27;N&#x27;</span>, <span class="hljs-comment">//Problem DNE</span>
+	SN_CE = <span class="hljs-string">&#x27;C&#x27;</span>, <span class="hljs-comment">//compile error</span>
+	SN_TE = <span class="hljs-string">&#x27;T&#x27;</span>, <span class="hljs-comment">//time limit exceeded</span>
+	SN_ME = <span class="hljs-string">&#x27;M&#x27;</span>, <span class="hljs-comment">//memory limit exceeded</span>
+	SN_RE = <span class="hljs-string">&#x27;R&#x27;</span>, <span class="hljs-comment">//runtime error</span>
+	SN_WA = <span class="hljs-string">&#x27;W&#x27;</span>, <span class="hljs-comment">//wrong answer</span>
+	SN_SE = <span class="hljs-string">&#x27;S&#x27;</span>, <span class="hljs-comment">//acceptable system error</span>
+	SN_SCE = <span class="hljs-string">&#x27;E&#x27;</span>; <span class="hljs-comment">//system critical error</span>
+</code></pre>
+</div>
+</div>
+</div>
+        <div class="footer">
+            <p>© 2026 · 本文采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议</p>
+        </div>
+    </div>
+    
+</div>
+<script>
+(function() {
+    // 复制按钮
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const code = btn.getAttribute('data-code');
+            if (code) {
+                await navigator.clipboard.writeText(code);
+                const orig = btn.textContent;
+                btn.textContent = '已复制！';
+                btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+            }
+        });
+    });
+    
+    
+})();
+</script>
+</body>
+</html>
